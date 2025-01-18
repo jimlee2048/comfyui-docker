@@ -7,7 +7,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![Docker Stars](https://img.shields.io/docker/stars/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 
-A Docker image for running [ComfyUI](https://github.com/comfyanonymous/ComfyUI) with automated setup and configuration management.
+A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image with automatic environment setup.
 
 ⚠️ **Note**: This image is designed for personal use with GUI access, not for production server deployments.
 
