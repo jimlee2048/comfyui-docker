@@ -1,4 +1,11 @@
 # ComfyUI Docker Image
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/jimlee2048/comfyui-docker/build-publish.yml)](https://github.com/jimlee2048/comfyui-docker/actions/workflows/build-publish.yml)
+[![Docker Image Version (tag nightly)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/nightly)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Image Size (tag nightly)](https://img.shields.io/docker/image-size/jimlee2048/comfyui-docker/nightly)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Image Version (tag latest)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Image Size (tag latest)](https://img.shields.io/docker/image-size/jimlee2048/comfyui-docker/latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Stars](https://img.shields.io/docker/stars/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 
 A Docker image for running [ComfyUI](https://github.com/comfyanonymous/ComfyUI) with automated setup and configuration management.
 
@@ -11,7 +18,7 @@ A Docker image for running [ComfyUI](https://github.com/comfyanonymous/ComfyUI) 
   - PyTorch: 2.5.1
   - xformers
   - Other common ML packages (`transformers`, `onnxruntime`, `opencv-python`, etc.)
-  - See [Dockerfile]() for complete details
+  - See [Dockerfile](Dockerfile) for complete details
 - Automated management of custom nodes & models:
   - Configuration-driven setup during startup
   - Pre/Post initialization script hooks (supports `.py`, `.sh`, `.bat`, `.ps1`)
