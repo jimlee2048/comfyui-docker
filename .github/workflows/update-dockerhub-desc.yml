@@ -5,9 +5,9 @@ on:
       - main
     paths:
       - README.md
-      - .github/workflows/dockerhub-description.yml
+      - .github/workflows/update-dockerhub-desc.yml
 jobs:
-  dockerHubDescription:
+  update-dockerhub-desc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
