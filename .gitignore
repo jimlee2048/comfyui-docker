@@ -1,0 +1,17 @@
+.venv/
+venv/
+__pycache__/
+.cache/
+temp/
+tmp/
+debug
+*.log
+volume/
+extra_model_paths.yaml
+*.env
+!example.env
+config/*
+!config/example.toml
+*-scripts/*
+!*.keep
+!*.example

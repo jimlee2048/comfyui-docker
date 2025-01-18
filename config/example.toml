@@ -1,0 +1,21 @@
+# [[custom_nodes]]
+# url = "https://github.com/ltdrdata/ComfyUI-Inspire-Pack"
+
+# [[custom_nodes]]
+# url = "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
+# script = "post-install-impact-pack.sh" ## optional, store it in scripts/post-install-node
+
+# [[models]]
+# url = "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors"
+# dir = "models/checkpoints/sdxl"
+# filename = "sd_xl_base_1.0.safetensors"
+
+# [[models]]
+# url = "https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors"
+# dir = "models/vae/sdxl"
+# filename = "sdxl_vae_fp16_fix.safetensors"
+
+# [[models]]
+# url = "https://civitai.com/api/download/models/30163?type=Model&format=SafeTensor&size=full&fp=fp16"
+# dir = "models/checkpoints/sd15"
+# filename = "AnythingV5_v5PrtRE.safetensors"

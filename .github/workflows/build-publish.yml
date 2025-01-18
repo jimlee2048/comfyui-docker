@@ -1,0 +1,145 @@
+name: "Docker Build and Publish"
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Force rebuild"
+        default: true
+        required: true
+        type: boolean
+
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "boot.py"
+
+jobs:
+  fetch-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      is_new_release: ${{ inputs.force_rebuild || github.event_name == 'push' || !steps.cache-release-tag.outputs.cache-hit }}
+      latest_release_tag: ${{ steps.get-latest-tag.outputs.tag }}
+      is_new_commit: ${{ inputs.force_rebuild || github.event_name == 'push' || !steps.cache-nightly-hash.outputs.cache-hit }}
+      nightly_commit_hash: ${{ steps.get-nightly-hash.outputs.hash }}
+
+    steps:
+      - name: Get latest release tag
+        id: get-latest-tag
+        run: |
+          LATEST_TAG=$(curl -sL https://api.github.com/repos/comfyanonymous/ComfyUI/releases/latest | jq -r .tag_name)
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get nightly commit hash
+        id: get-nightly-hash
+        run: |
+          NIGHTLY_HASH=$(curl -sL https://api.github.com/repos/comfyanonymous/ComfyUI/commits/master | jq -r .sha)
+          echo "hash=$NIGHTLY_HASH" >> $GITHUB_OUTPUT
+
+      - name: Compare release tag
+        id: cache-release-tag
+        uses: actions/cache@v3
+        with:
+          path: .latest-tag
+          key: ${{ steps.get-latest-tag.outputs.tag }}
+
+      - name: Compare nightly hash
+        id: cache-nightly-hash
+        uses: actions/cache@v3
+        with:
+          path: .nightly-hash
+          key: ${{ steps.get-nightly-hash.outputs.hash }}
+
+      - name: Save new release tag
+        if: steps.cache-release-tag.outputs.cache-hit != 'true'
+        run: echo ${{ steps.get-latest-tag.outputs.tag }} | tee .latest-tag
+
+      - name: Save new nightly hash
+        if: steps.cache-nightly-hash.outputs.cache-hit != 'true'
+        run: echo ${{ steps.get-nightly-hash.outputs.hash }} | tee .nightly-hash
+
+  build-latest:
+    needs: fetch-upstream
+    runs-on: ubuntu-latest
+    if: needs.fetch-upstream.outputs.is_new_release == 'true'
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_USERNAME }}/comfyui-docker
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ needs.fetch-upstream.outputs.latest_release_tag }},enable={{is_default_branch}}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            COMFYUI_VERSION=${{ needs.fetch-upstream.outputs.latest_release_tag }}
+
+  build-nightly:
+    needs: fetch-upstream
+    runs-on: ubuntu-latest
+    if: needs.fetch-upstream.outputs.is_new_commit == 'true'
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_USERNAME }}/comfyui-docker
+          tags: |
+            type=raw,value=nightly,enable={{is_default_branch}}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            COMFYUI_VERSION=master

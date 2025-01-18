@@ -1,0 +1,37 @@
+services:
+  comfyui-docker:
+    image: jimlee2048/comfyui-docker:latest # switch ComfyUI version, available tags: nightly, latest, vX.Y.Z
+    container_name: comfyui-docker
+    env_file: .env
+    ports:
+      - 8188:8188
+    volumes:
+      # basic comfyui paths
+      ## your user config, including settings, saved workflows, logs, etc.
+      - ./volume/user:/workspace/ComfyUI/user
+      ## output folder
+      - ./volume/output:/workspace/ComfyUI/output
+      ## models folder
+      - ./volume/models:/workspace/ComfyUI/models
+      # boot process related paths
+      ## boot config folder (optional if INIT_NODE & INIT_MODEL == false)
+      - ./config:/workspace/boot_config
+      ## scripts (optional if you don't have any custom scripts)
+      - ./scripts:/workspace/scripts
+      ## map external custom_nodes, useful for development (optional)
+      ## warning: won't get auto init at start, need to manually trigger init using comfyui-manager
+      ## warning: don't map a same custom_nodes which have already defined in boot config
+      # - /path/to/a_custom_nodes:/workspace/ComfyUI/custom_nodes/a_custom_nodes
+      ## use model from sd-webui-a1111 (optional)
+      # - ./extra_model_paths.yaml:/workspace/ComfyUI/extra_model_paths.yaml
+      # - /path/to/sd-webui-a1111:/workspace/external/sd-webui-a1111
+
+    security_opt:
+      - "label=type:nvidia_container_t"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
