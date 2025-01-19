@@ -509,7 +509,7 @@ class ModelManager:
                         download_options['header'] = f"Authorization: Bearer {HF_API_TOKEN}"
                         self.progress.print(f"🔑 Retrying with provided HF_API_TOKEN", "info")
                     # civitai: query token
-                    if attempt == 1 and self._is_civitai_url(model_url) and CIVITAI_API_TOKEN:
+                    elif attempt == 1 and self._is_civitai_url(model_url) and CIVITAI_API_TOKEN:
                         parts = urllib.parse.urlsplit(model_url)
                         query = dict(urllib.parse.parse_qsl(parts.query))
                         query['token'] = CIVITAI_API_TOKEN
