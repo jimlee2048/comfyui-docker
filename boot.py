@@ -623,7 +623,7 @@ class ComfyUIInitializer:
         self.node_manager = NodeManager(comfyui_path)
         self.model_manager = ModelManager(comfyui_path)
 
-    def _exec_scripts_in_dir(dir: Path) -> bool:
+    def _exec_scripts_in_dir(self, dir: Path) -> bool:
         if not dir or not dir.is_dir():
             logger.warning(f"⚠️ {dir} is not a valid directory.")
             return False
