@@ -18,8 +18,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/ltdrdata/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
-VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes", "/root/.local/lib/python3.11"]
-
 # install comfyui - method 2: using comfy-cli
 # RUN comfy --skip-prompt install --version=nightly --skip-torch-or-directml --nvidia --cuda-version 12.4
 
@@ -47,6 +45,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --index-url https://download.pytorch.org/whl/cu124 \
     --extra-index-url https://pypi.org/simple
 
+# isolate critical python packages
 ENV PIP_USER=true
 ENV PATH="${PATH}:/root/.local/bin"
 
@@ -61,12 +60,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
     huggingface_hub
 
-COPY boot.py .
-COPY requirements.txt .
 # install boot script requirements
+COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt \
     && python ${COMFYUI_MN_PATH}/cm-cli.py save-snapshot
 
+COPY boot.py .
+VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes", "/root/.local/lib/python3.11"]
 EXPOSE 8188
 CMD [ "python", "boot.py" ]
