@@ -412,6 +412,7 @@ class ModelManager:
         self._start_aria2c()
 
     def _start_aria2c(self):
+        logger.info(f"🚀 Starting aria2c...")
         try:
             subprocess.run([
                 "aria2c",
@@ -424,10 +425,25 @@ class ModelManager:
                 "--continue=true",
                 "--disable-ipv6=true",
             ], check=True)
-            # sleep to ensure aria2c is ready
-            time.sleep(1)
+            # sleep a while to ensure aria2c is ready
+            time.sleep(2)
+
+            # check if aria2c is ready
+            max_retries = 3
+            for _ in range(max_retries):
+                try:
+                    self.aria2.get_stats()
+                    logger.info(f"✅ aria2c is ready")
+                    break
+                except Exception as e:
+                    logger.warning(f"⚠️ aria2c still not ready, retrying...")
+                    time.sleep(2)
+            else:
+                raise Exception(f"aria2c is not ready after {max_retries} retries")
+
             # purge all completed, removed or failed downloads from the queue
             self.aria2.purge()
+
             # set os env COMFYUI_MANAGER_ARIA2_SERVER and COMFYUI_MANAGER_ARIA2_SECRET
             os.environ['COMFYUI_MANAGER_ARIA2_SERVER'] = "http://localhost:6800/jsonrpc"
             os.environ['COMFYUI_MANAGER_ARIA2_SECRET'] = ""
