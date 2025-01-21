@@ -620,8 +620,6 @@ class ComfyUIInitializer:
         self.current_models = self.config_loader.current_models
         self.prev_nodes = self.config_loader.prev_nodes
         self.prev_models = self.config_loader.prev_models
-        self.node_manager = NodeManager(comfyui_path)
-        self.model_manager = ModelManager(comfyui_path)
 
     def _exec_scripts_in_dir(self, dir: Path) -> bool:
         if not dir or not dir.is_dir():
@@ -649,11 +647,13 @@ class ComfyUIInitializer:
         # init nodes and models
         failed_config = defaultdict(list)
         if self.current_config and INIT_NODE:
-            self.node_manager.init_nodes(self.current_nodes, self.prev_nodes)
-            failed_config['nodes'] = self.node_manager.failed_list
+            node_manager = NodeManager(self.comfyui_path)
+            node_manager.init_nodes(self.current_nodes, self.prev_nodes)
+            failed_config['nodes'] = node_manager.failed_list
         if self.current_config and INIT_MODEL:
-            self.model_manager.init_models(self.current_models, self.prev_models)
-            failed_config['models'] = self.model_manager.failed_list
+            model_manager = ModelManager(self.comfyui_path)
+            model_manager.init_models(self.current_models, self.prev_models)
+            failed_config['models'] = model_manager.failed_list
         # execute post init scripts
         if self.post_scripts_dir.is_dir():
             logger.info(f"🛠️ Scanning post-init scripts...")
