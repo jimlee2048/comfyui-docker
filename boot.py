@@ -326,7 +326,7 @@ class NodeManager:
                 self.progress.advance(msg=f"ℹ️ {node_name} already exists. Skipped.", style="info")
                 return True
             self.progress.advance(msg=f"📦 Installing node: {node_name}", style="info")
-            exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url])
+            exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"])
             if 'script' in config:
                 exec_script(POST_INSTALL_NODE_SCRIPTS / config['script'])
             return True
