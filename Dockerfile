@@ -61,12 +61,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
     huggingface_hub
 
+COPY boot.py .
+COPY requirements.txt .
 # install boot script requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install wget giturlparse aria2p \
+    pip install -r requirements.txt \
     && python ${COMFYUI_MN_PATH}/cm-cli.py save-snapshot
-
-COPY boot.py .
 
 EXPOSE 8188
 CMD [ "python", "boot.py" ]
