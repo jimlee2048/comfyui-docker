@@ -43,8 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
     xformers \
     --index-url https://download.pytorch.org/whl/cu124 \
-    --extra-index-url https://pypi.org/simple \
-    && pip cache purge
+    --extra-index-url https://pypi.org/simple
 
 # isolate critical python packages
 ENV PIP_USER=true
@@ -59,8 +58,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     transformers \
     # i hate this stupid solution to avoid possible conflict :(
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
-    huggingface_hub \
-    && pip cache purge
+    huggingface_hub
 
 # install boot script requirements
 COPY requirements.txt .
