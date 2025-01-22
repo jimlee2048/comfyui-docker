@@ -64,7 +64,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt \
-    && pip cache purge \
     && python ${COMFYUI_MN_PATH}/cm-cli.py save-snapshot
 
 COPY boot.py .
