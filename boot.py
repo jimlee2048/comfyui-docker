@@ -58,12 +58,14 @@ def json_default(obj):
     raise TypeError
 
 
-def exec_command(command: list[str], cwd: str = None) -> int:
+def exec_command(command: list[str], cwd: str = None, check: bool = False) -> subprocess.CompletedProcess:
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd) as proc:
         for line in proc.stdout:
             logger.info(line.strip())
-        proc.wait()
-        return proc.returncode
+        retcode = proc.poll()
+        if check and retcode != 0:
+            raise subprocess.CalledProcessError(retcode, command)
+        return subprocess.CompletedProcess(proc.args, retcode, proc.stdout, proc.stderr)
 
 
 def exec_script(script: Path) -> int:
@@ -73,19 +75,20 @@ def exec_script(script: Path) -> int:
     try:
         logger.info(f"🛠️ Executing script: {script}")
         if script.suffix == ".py":
-            return_code = exec_command([sys.executable, str(script)])
+            res = exec_command([sys.executable, str(script)])
         elif script.suffix == ".sh" and os.name == "posix":
-            return_code = exec_command(["bash", str(script)])
+            res = exec_command(["bash", str(script)])
         elif script.suffix == ".ps1" and os.name == "nt":
-            return_code = exec_command(["powershell", "-File", str(script)])
+            res = exec_command(["powershell", "-File", str(script)])
         elif script.suffix == ".bat" and os.name == "nt":
-            return_code = exec_command([str(script)])
+            res = exec_command([str(script)])
         else:
             logger.warning(f"⚠️ Unsupported script type: {script}. Skipped.")
             return None
-        if return_code != 0:
-            logger.warning(f"⚠️ {script} exited with non-zero code: {return_code}")
-        return return_code
+        returncode = res.returncode
+        if returncode != 0:
+            logger.warning(f"⚠️ {script} exited with non-zero code: {returncode}")
+        return returncode
     except Exception as e:
         logger.error(f"❌ Error executing {script}: {str(e)}")
         return None
@@ -334,10 +337,10 @@ class NodeManager:
             self.progress.advance(msg=f"📦 Installing node: {node_name}", style="info")
             if node_source == "registry":
                 node_version = config['version']
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}", "--mode", "remote"])
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}", "--mode", "remote"], check=True)
             elif node_source == "git":
                 node_url = config['url']
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"])
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"], check=True)
             else:
                 raise Exception(f"Unsupported source: {node_source}")
             if 'script' in config:
@@ -360,7 +363,7 @@ class NodeManager:
             self.progress.advance(msg=f"🗑️ Uninstalling node: {node_name}", style="info")
             # if nodes source from registry, try to use cm-cli process uninstalling first
             if node_source == "registry":
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "uninstall", node_name])
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "uninstall", node_name], check=True)
             # check again if node exists
             possible_path = self.comfyui_path / "custom_nodes" / node_name
             if possible_path.exists():
