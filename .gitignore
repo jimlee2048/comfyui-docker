@@ -5,6 +5,7 @@ __pycache__/
 temp/
 tmp/
 debug
+docker-compose.dev.yml
 *.log
 volume/
 extra_model_paths.yaml

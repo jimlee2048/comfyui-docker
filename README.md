@@ -110,7 +110,7 @@ docker compose up -d
   docker compose up -d
   ```
 ## TODO
-- [ ] Support install custom nodes from [Comfy Registry](https://registry.comfy.org/)
+- [x] Support install custom nodes from [Comfy Registry](https://registry.comfy.org/)
 - [ ] ROCm version for AMD GPU
 - [ ] MPS version for Apple silicon
 - [ ] XPU version for Intel GPU

@@ -126,7 +126,7 @@ class BootProgress:
 class BootConfigManager:
     def __init__(self, config_dir: Path):
         self.config_dir = config_dir
-        self.node_exclude = ["ComfyUI-Manager", "comfyui-manager"]
+        self.node_exclude = INIT_NODE_EXCLUDE
         self.current_config = self.load_boot_config()
         self.prev_config = self.load_prev_config(BOOT_CONFIG_PREV_PATH)
         self.current_nodes = self.load_nodes_config(self.current_config)
@@ -232,24 +232,30 @@ class BootConfigManager:
 
         for node in nodes_config.copy():
             try:
-                node['url'] = self._preprocess_url(node['url'])
-                node_repo = giturlparse.parse(node['url'])
-                # validate git url
-                if not node_repo.valid:
-                    raise Exception(f"Invalid git URL: {node['url']}")
-                # parse custom node name from URL
-                node['name'] = node.get('name', node_repo.name)
-                node['alt_name'] = node.get('alt_name', node['name'].lower())
-                should_exclude = (
-                    node['name'] in self.node_exclude
-                    or node['alt_name'] in self.node_exclude
-                )
-                if should_exclude:
+                # source: registry
+                if 'node_id' in node:
+                    node['source'] = "registry"
+                    node['name'] = node['node_id']
+                    # use 'latest' as default version
+                    if 'version' not in node:
+                        node['version'] = "latest"
+                # source: git
+                elif 'url' in node:
+                    node['source'] = "git"
+                    node['url'] = self._preprocess_url(node['url'])
+                    node_repo = giturlparse.parse(node['url'])
+                    # validate git url
+                    if not node_repo.valid:
+                        raise Exception(f"Invalid git URL: {node['url']}")
+                    node['name'] = node_repo.name.lower()
+                else:
+                    raise Exception("None of 'node_id' or 'url' found in node config")
+                if node['name'] in self.node_exclude:
                     logger.warning(f"⚠️ Skip excluded node: {node['name']}")
                     nodes_config.remove(node)
                     continue
             except KeyError as e:
-                logger.warning(f"⚠️ Invalid node config: {node}\n{str(e)}")
+                logger.warning(f"⚠️ Invalid node config: {str(e)}\n{node}")
                 continue
 
         # drop duplicates
@@ -288,7 +294,7 @@ class NodeManager:
     def __init__(self, comfyui_path: Path):
         self.comfyui_path = comfyui_path
         self.progress = BootProgress()
-        self.node_exclude = ["ComfyUI-Manager", "comfyui-manager"]
+        self.node_exclude = INIT_NODE_EXCLUDE
         self.failed_list = []
 
     def _is_valid_git_repo(self, path: str) -> bool:
@@ -300,25 +306,25 @@ class NodeManager:
 
     def is_node_exists(self, config: dict) -> bool:
         node_name = config['name']
-        node_alt_name = config.get('alt_name', node_name.lower())
-        possible_paths = {self.comfyui_path / "custom_nodes" / name
-                          for name in [node_name, node_alt_name]}
-
-        for p in possible_paths:
-            if p.exists() and self._is_valid_git_repo(p):
-                return True
-            elif p.is_dir():
-                logger.warning(f"⚠️ {node_name} invalid, removing: {p}")
-                shutil.rmtree(p)
-            elif p.is_file():
-                logger.warning(f"⚠️ {node_name} invalid, removing: {p}")
-                p.unlink()
-        return False
+        node_source = config['source']
+        possible_path = self.comfyui_path / "custom_nodes" / node_name
+        if not possible_path.exists():
+            return False
+        elif possible_path.is_dir():
+            if node_source == "git" and not self._is_valid_git_repo(possible_path):
+                logger.warning(f"⚠️ {node_name} invalid, removing: {possible_path}")
+                shutil.rmtree(possible_path)
+                return False
+            return True
+        elif possible_path.is_file():
+            logger.warning(f"⚠️ {node_name} invalid, removing: {possible_path}")
+            possible_path.unlink()
+            return False
 
     def install_node(self, config: dict) -> bool:
         try:
             node_name = config['name']
-            node_url = config['url']
+            node_source = config['source']
             if node_name in self.node_exclude:
                 self.progress.advance(msg=f"⚠️ Not allowed to install node: {node_name}", style="warning")
                 return False
@@ -326,7 +332,14 @@ class NodeManager:
                 self.progress.advance(msg=f"ℹ️ {node_name} already exists. Skipped.", style="info")
                 return True
             self.progress.advance(msg=f"📦 Installing node: {node_name}", style="info")
-            exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"])
+            if node_source == "registry":
+                node_version = config['version']
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}", "--mode", "remote"])
+            elif node_source == "git":
+                node_url = config['url']
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"])
+            else:
+                raise Exception(f"Unsupported source: {node_source}")
             if 'script' in config:
                 exec_script(POST_INSTALL_NODE_SCRIPTS / config['script'])
             return True
@@ -337,19 +350,21 @@ class NodeManager:
     def uninstall_node(self, config: dict) -> bool:
         try:
             node_name = config['name']
-            node_alt_name = config.get('alt_name', node_name.lower())
-            if node_name in self.node_exclude or node_alt_name in self.node_exclude:
+            node_source = config['source']
+            if node_name in self.node_exclude:
                 self.progress.advance(msg=f"⚠️ Not allowed to uninstall node: {node_name}", style="warning")
                 return False
             if not self.is_node_exists(config):
                 self.progress.advance(msg=f"ℹ️ {node_name} not found. Skipped.", style="info")
                 return True
-            possible_paths = {self.comfyui_path / "custom_nodes" / name
-                              for name in [node_name, node_alt_name]}
             self.progress.advance(msg=f"🗑️ Uninstalling node: {node_name}", style="info")
-            for node_path in possible_paths:
-                if node_path.exists():
-                    shutil.rmtree(node_path)
+            # if nodes source from registry, try to use cm-cli process uninstalling first
+            if node_source == "registry":
+                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "uninstall", node_name])
+            # check again if node exists
+            possible_path = self.comfyui_path / "custom_nodes" / node_name
+            if possible_path.exists():
+                shutil.rmtree(possible_path)
             logger.info(f"✅ Uninstalled node: {node_name}")
             return True
         except Exception as e:
@@ -375,7 +390,7 @@ class NodeManager:
             install_count = len(install_nodes)
             logger.info(f"📦 Installing {install_count} nodes:")
             for node in install_nodes:
-                logger.info(f"└─ {node['url']}")
+                logger.info(f"└─ {node['name']} (from {node['source']})")
             self.progress.start(install_count)
             for node in install_nodes:
                 if not self.install_node(node):
@@ -706,6 +721,7 @@ if __name__ == '__main__':
     BOOT_CONFIG_INCLUDE = os.environ.get('BOOT_CONFIG_INCLUDE', None)
     BOOT_CONFIG_EXCLUDE = os.environ.get('BOOT_CONFIG_EXCLUDE', None)
     INIT_NODE = get_bool_env('INIT_NODE', True)
+    INIT_NODE_EXCLUDE = {"comfyui-manager"}
     INIT_MODEL = get_bool_env('INIT_MODEL', True)
     CN_NETWORK = get_bool_env('CN_NETWORK', False)
 

@@ -1,9 +1,13 @@
+## source: registry https://registry.comfy.org/
 # [[custom_nodes]]
-# url = "https://github.com/ltdrdata/ComfyUI-Inspire-Pack"
+# node_id = "comfyui-impact-pack"
+# version = "latest"             # option: latest, nightly, vX.Y.Z
 
+## source: git repo
+## if node_id provided, url will be ignored
 # [[custom_nodes]]
 # url = "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
-# script = "post-install-impact-pack.sh" ## optional, store it in scripts/post-install-node
+# script = "post-install-impact-pack.sh" # optional, store it in scripts/post-install-node
 
 # [[models]]
 # url = "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors"
