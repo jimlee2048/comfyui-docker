@@ -63,8 +63,8 @@ def exec_command(command: list[str], cwd: str = None, check: bool = False) -> su
         for line in proc.stdout:
             logger.info(line.strip())
         proc.wait()
-        if check and retcode != 0:
-            raise subprocess.CalledProcessError(retcode, command)
+        if check and proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, command)
         return subprocess.CompletedProcess(proc.args, proc.returncode, proc.stdout, proc.stderr)
 
 
