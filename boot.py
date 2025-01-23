@@ -62,10 +62,10 @@ def exec_command(command: list[str], cwd: str = None, check: bool = False) -> su
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd) as proc:
         for line in proc.stdout:
             logger.info(line.strip())
-        retcode = proc.poll()
+        proc.wait()
         if check and retcode != 0:
             raise subprocess.CalledProcessError(retcode, command)
-        return subprocess.CompletedProcess(proc.args, retcode, proc.stdout, proc.stderr)
+        return subprocess.CompletedProcess(proc.args, proc.returncode, proc.stdout, proc.stderr)
 
 
 def exec_script(script: Path) -> int:
