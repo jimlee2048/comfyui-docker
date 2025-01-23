@@ -1,9 +1,7 @@
 # ComfyUI Docker Image
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/jimlee2048/comfyui-docker/build-publish.yml)](https://github.com/jimlee2048/comfyui-docker/actions/workflows/build-publish.yml)
 [![Docker Image Version (tag nightly)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/nightly)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
-[![Docker Image Size (tag nightly)](https://img.shields.io/docker/image-size/jimlee2048/comfyui-docker/nightly)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![Docker Image Version (tag latest)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
-[![Docker Image Size (tag latest)](https://img.shields.io/docker/image-size/jimlee2048/comfyui-docker/latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![Docker Stars](https://img.shields.io/docker/stars/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 
@@ -25,6 +23,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
   - Multiple config files support, with optional regex-based filter for flexible updates
 - Built-in [aria2](https://github.com/aria2/aria2) for accelerated large model files downloads
 - Use [cm-cli](https://github.com/ltdrdata/ComfyUI-Manager/blob/main/docs/en/cm-cli.md) to install custom nodes.
+- Support install custom nodes from [Comfy Registry](https://registry.comfy.org/)
 - Optional optimizations for users in the Chinese Mainland (mirrors for pip/Hugging Face/Civitai)
 
 ## Available Image Tags
@@ -62,10 +61,10 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 
 3. (Optional) Set up automatic node/model management:
     - Enable in `.env`:
-        ```env
-        INIT_NODE=true
-        INIT_MODEL=true
-        ```
+      ```env
+      INIT_NODE=true
+      INIT_MODEL=true
+      ```
     - Create your boot config in `config/`:
         - Start with `config/example.toml`
         - Or, reference my [personal config](https://github.com/jimlee2048/config-aigc-playground/tree/main/comfyui/config)
@@ -110,7 +109,6 @@ docker compose up -d
   docker compose up -d
   ```
 ## TODO
-- [x] Support install custom nodes from [Comfy Registry](https://registry.comfy.org/)
 - [ ] ROCm version for AMD GPU
 - [ ] MPS version for Apple silicon
 - [ ] XPU version for Intel GPU
