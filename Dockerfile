@@ -24,7 +24,8 @@ RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${CO
 # master(nightly), or version tag like v0.1.0
 # https://github.com/comfyanonymous/ComfyUI/tags
 ARG COMFYUI_VERSION=master
-RUN git -C ${COMFYUI_PATH} reset --hard ${COMFYUI_VERSION}
+RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
+    && git -C ${COMFYUI_PATH} reset --hard ${COMFYUI_VERSION}
 # main(nightly), or version tag like v0.1.0
 # https://github.com/ltdrdata/ComfyUI-Manager/tags
 ARG COMFYUI_MN_VERSION=main
