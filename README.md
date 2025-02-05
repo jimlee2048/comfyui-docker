@@ -12,8 +12,8 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 ## Features
 - Ready-to-use Python environment with:
   - Python: 3.11
-  - CUDA: 12.4
-  - PyTorch: 2.5.1
+  - CUDA: 12.6
+  - PyTorch: 2.6.0
   - xformers
   - Other common ML packages (`transformers`, `onnxruntime`, `opencv-python`, etc.)
   - See [Dockerfile](Dockerfile) for complete details

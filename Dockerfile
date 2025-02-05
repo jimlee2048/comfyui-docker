@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r ${COMFYUI_PATH}/requirements.txt \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
     xformers \
-    --index-url https://download.pytorch.org/whl/cu124 \
+    --index-url https://download.pytorch.org/whl/cu126 \
     --extra-index-url https://pypi.org/simple
 
 # isolate critical python packages
