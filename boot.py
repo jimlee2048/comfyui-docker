@@ -58,14 +58,38 @@ def json_default(obj):
     raise TypeError
 
 
-def exec_command(command: list[str], cwd: str = None, check: bool = False) -> subprocess.CompletedProcess:
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd) as proc:
-        for line in proc.stdout:
-            logger.info(line.strip())
-        proc.wait()
-        if check and proc.returncode != 0:
-            raise subprocess.CalledProcessError(proc.returncode, command)
-        return subprocess.CompletedProcess(proc.args, proc.returncode, proc.stdout, proc.stderr)
+def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+    try:
+        return subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"❌ Failed to execute command: {e.cmd}\n{e.stderr}")
+        return e
+
+
+# experimental: use subprocess.Popen to get real-time output
+# reference: https://github.com/python/cpython/blob/main/Lib/subprocess.py#L514
+# def exec_command(command: list[str], cwd: str = None, check: bool = False, **kwargs) -> subprocess.CompletedProcess:
+#     stdout_output = ""
+#     stderr_output = ""
+#     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd, **kwargs) as proc:
+#         try:
+#             for line in proc.stdout:
+#                 logger.info(line.strip())
+#                 stdout_output += line
+#         except subprocess.TimeoutExpired as exc:
+#             proc.kill()
+#             if os.name == "nt":
+#                 exc.stdout, exc.stderr = process.communicate()
+#             else:
+#                 proc.wait()
+#             raise
+#         except:
+#             proc.kill()
+#             raise
+#         retcode = proc.poll()
+#         if check and retcode:
+#             raise subprocess.CalledProcessError(proc.returncode, command, output=stdout_output, stderr=stderr_output)
+#     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
 
 
 def exec_script(script: Path) -> int:
@@ -310,44 +334,95 @@ class NodeManager:
     def is_node_exists(self, config: dict) -> bool:
         node_name = config['name']
         node_source = config['source']
-        possible_path = self.comfyui_path / "custom_nodes" / node_name
-        if not possible_path.exists():
+        node_path = self.comfyui_path / "custom_nodes" / node_name
+        if not node_path.exists():
             return False
-        elif possible_path.is_dir():
-            if node_source == "git" and not self._is_valid_git_repo(possible_path):
-                logger.warning(f"⚠️ {node_name} invalid, removing: {possible_path}")
-                shutil.rmtree(possible_path)
+        elif node_path.is_dir():
+            if node_source == "git" and not self._is_valid_git_repo(node_path):
+                logger.warning(f"⚠️ {node_name} invalid, removing: {node_path}")
+                shutil.rmtree(node_path)
                 return False
             return True
-        elif possible_path.is_file():
-            logger.warning(f"⚠️ {node_name} invalid, removing: {possible_path}")
-            possible_path.unlink()
+        elif node_path.is_file():
+            logger.warning(f"⚠️ {node_name} invalid, removing: {node_path}")
+            node_path.unlink()
             return False
 
     def install_node(self, config: dict) -> bool:
         try:
             node_name = config['name']
             node_source = config['source']
+            node_path = self.comfyui_path / "custom_nodes" / node_name
             if node_name in self.node_exclude:
-                self.progress.advance(msg=f"⚠️ Not allowed to install node: {node_name}", style="warning")
+                self.progress.advance(msg=f"⚠️ Not allowed to install excluded node: {node_name}", style="warning")
                 return False
             if self.is_node_exists(config):
                 self.progress.advance(msg=f"ℹ️ {node_name} already exists. Skipped.", style="info")
                 return True
             self.progress.advance(msg=f"📦 Installing node: {node_name}", style="info")
+
+            # install node from registry
             if node_source == "registry":
                 node_version = config['version']
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}", "--mode", "remote"], check=True)
+                install_result = exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}"], check=True)
+
+                # reference:original cm-cli.py output format
+                # https://github.com/ltdrdata/ComfyUI-Manager/blob/411c0633a3d542ac20ea8cb47c9578f22fb19854/cm-cli.py#L162
+                # check if error msg print exists
+                ignore_errors = [
+                    "PyTorch is not installed",
+                    "pip's dependency resolver does not currently take into account all the packages that are installed"
+                ]
+                ignore_errors_pattern = f"(?!.*({'|'.join(re.escape(err) for err in ignore_errors)}))"
+                error_pattern = compile_pattern(rf"ERROR:(?P<msg>{ignore_errors_pattern}.+)")
+                error_match = error_pattern.finditer(install_result.stdout)
+                for error in error_match:
+                    logger.error(f"{install_result.stdout}")
+                    error_msg = error.group("msg").strip()
+                    if "An error occurred while installing" in error_msg:
+                        # try to get more detailed error message from next line
+                        remaining_stdout = install_result.stdout[error.end():].strip().splitlines()
+                        next_line = remaining_stdout[0].strip()
+                        error_msg = next_line if next_line else error_msg
+                    raise Exception(f"{error_msg}")
+
+                # check if installation result print exists
+                result_pattern = compile_pattern(r"1\/1\s\[(?P<result>.+?)\]\s(?P<msg>.+)")
+                result_match = result_pattern.search(install_result.stdout)
+                if result_match:
+                    result = result_match.group("result")
+                    if result == "INSTALLED":
+                        self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
+                    elif result == "SKIP":
+                        self.progress.print(f"ℹ️ {node_name} already exists. Skipped.", style="info")
+                        return True
+                    elif result == "ENABLED":
+                        self.progress.print(f"⚠️ {node_name} already exists. Enabled.", style="warning")
+                        return True
+                else:
+                    raise Exception(f"Failed to parse installation result")
+            # install node from git
             elif node_source == "git":
                 node_url = config['url']
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", node_url, "--mode", "remote"], check=True)
+                # use git command to clone repo
+                exec_command(["git", "clone", node_url, self.comfyui_path / "custom_nodes" / node_name], check=True)
+                # use cm_cli.py to init node
+                install_result = exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "post-install", node_path], check=True)
+                self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
             else:
                 raise Exception(f"Unsupported source: {node_source}")
+
+            # execute post install script
             if 'script' in config:
                 exec_script(POST_INSTALL_NODE_SCRIPTS / config['script'])
             return True
+
         except Exception as e:
             logger.error(f"❌ Failed to install node {node_name}: {str(e)}")
+            # try to remove node_path if exists
+            if node_path.exists():
+                logger.warning(f"⚠️ Removing failed installation: {node_name}")
+                shutil.rmtree(node_path)
             return False
 
     def uninstall_node(self, config: dict) -> bool:
@@ -355,7 +430,7 @@ class NodeManager:
             node_name = config['name']
             node_source = config['source']
             if node_name in self.node_exclude:
-                self.progress.advance(msg=f"⚠️ Not allowed to uninstall node: {node_name}", style="warning")
+                self.progress.advance(msg=f"⚠️ Not allowed to uninstall excluded node: {node_name}", style="warning")
                 return False
             if not self.is_node_exists(config):
                 self.progress.advance(msg=f"ℹ️ {node_name} not found. Skipped.", style="info")
@@ -393,7 +468,7 @@ class NodeManager:
             install_count = len(install_nodes)
             logger.info(f"📦 Installing {install_count} nodes:")
             for node in install_nodes:
-                logger.info(f"└─ {node['name']} (from {node['source']})")
+                logger.info(f"└─ {node['name']} ({node['source']})")
             self.progress.start(install_count)
             for node in install_nodes:
                 if not self.install_node(node):
@@ -407,11 +482,6 @@ class NodeManager:
             for node in uninstall_nodes:
                 if not self.uninstall_node(node):
                     self.failed_list.append(node)
-        if self.failed_list:
-            logger.error(f"❌ Failed to process {len(self.failed_list)} nodes:")
-            for node in self.failed_list:
-                logger.error(f"└─ {node['name']}")
-            return False
         return True
 
 
@@ -634,11 +704,6 @@ class ModelManager:
             for model in models_to_remove:
                 if not self.remove_model(model):
                     self.failed_list.append(model)
-        if self.failed_list:
-            logger.error(f"❌ Failed to process {len(self.failed_list)} models:")
-            for model in self.failed_list:
-                logger.error(f"└─ {model['filename']}")
-            return False
         return True
 
 
@@ -683,7 +748,7 @@ class ComfyUIInitializer:
         if self.current_config and INIT_NODE:
             node_manager = NodeManager(self.comfyui_path)
             node_manager.init_nodes(self.current_nodes, self.prev_nodes)
-            failed_config['nodes'] = node_manager.failed_list
+            failed_config['custom_nodes'] = node_manager.failed_list
         if self.current_config and INIT_MODEL:
             model_manager = ModelManager(self.comfyui_path)
             model_manager.init_models(self.current_models, self.prev_models)
@@ -695,8 +760,26 @@ class ComfyUIInitializer:
         elif self.post_scripts_dir.is_file():
             logger.warning(f"⚠️ {self.post_scripts_dir} invalid, removing...")
             self.post_scripts_dir.unlink()
-        # cache current config
-        self.config_loader.write_config_cache(BOOT_CONFIG_PREV_PATH, {k: v for k, v in self.current_config.items() if k not in failed_config})
+
+        # check if any failed config
+        if failed_config['custom_nodes']:
+            logger.error(f"❌ Failed to init {len(failed_config['custom_nodes'])} nodes, will retry on next boot:")
+            for node in failed_config['custom_nodes']:
+                logger.error(f"└─ {node['name']}")
+        if failed_config['models']:
+            logger.error(f"❌ Failed to init {len(failed_config['models'])} models, will retry on next boot:")
+            for model in failed_config["models"]:
+                logger.error(f"└─ {model['filename']}")
+        # cache succeeded config
+        # successed config = current config - failed config
+        succeeded_config = defaultdict(list)
+        for key, items in self.current_config.items():
+            if key == "custom_nodes":
+                succeeded_config[key] = [node for node in items if node not in failed_config['custom_nodes']]
+            elif key == "models":
+                succeeded_config[key] = [model for model in items if model not in failed_config["models"]]
+        self.config_loader.write_config_cache(BOOT_CONFIG_PREV_PATH, succeeded_config)
+
         # launch comfyui
         logger.info(f"🚀 Launching ComfyUI...")
         launch_args_list = ["--listen", "0.0.0.0,::", "--port", "8188"] + (COMFYUI_EXTRA_ARGS.split() if COMFYUI_EXTRA_ARGS else [])
