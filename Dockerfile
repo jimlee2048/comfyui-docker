@@ -36,15 +36,14 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 # suppress [WARNING: Running pip as the 'root' user]
 ENV PIP_ROOT_USER_ACTION=ignore
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu126"
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     -r ${COMFYUI_PATH}/requirements.txt \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
-    xformers \
-    --index-url https://download.pytorch.org/whl/cu126 \
-    --extra-index-url https://pypi.org/simple
+    xformers
 
 # isolate critical python packages
 ENV PIP_USER=true
