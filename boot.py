@@ -62,6 +62,7 @@ def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
     try:
         return subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
     except subprocess.CalledProcessError as e:
+        logger.error(f"{e.stdout}")
         logger.error(f"❌ Failed to execute command: {e.cmd}\n{e.stderr}")
         return e
 
@@ -141,13 +142,13 @@ class BootProgress:
             logger.info(f"{overall_progress}")
             return
         if style == self.log_level_info:
-            logger.info(f"{overall_progress}: {msg}")
+            logger.info(f"{overall_progress} {msg}")
         elif style == self.log_level_warning:
-            logger.warning(f"{overall_progress}: {msg}")
+            logger.warning(f"{overall_progress} {msg}")
         elif style == self.log_level_error:
-            logger.error(f"{overall_progress}: {msg}")
+            logger.error(f"{overall_progress} {msg}")
         else:
-            logger.info(f"{overall_progress}: {msg}")
+            logger.info(f"{overall_progress} {msg}")
 
 
 class BootConfigManager:
@@ -364,7 +365,7 @@ class NodeManager:
             # install node from registry
             if node_source == "registry":
                 node_version = config['version']
-                install_result = exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "install", f"{node_name}@{node_version}"], check=True)
+                install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "install", f"{node_name}@{node_version}"], check=True)
 
                 # reference:original cm-cli.py output format
                 # https://github.com/ltdrdata/ComfyUI-Manager/blob/411c0633a3d542ac20ea8cb47c9578f22fb19854/cm-cli.py#L162
@@ -377,7 +378,6 @@ class NodeManager:
                 error_pattern = compile_pattern(rf"ERROR:(?P<msg>{ignore_errors_pattern}.+)")
                 error_match = error_pattern.finditer(install_result.stdout)
                 for error in error_match:
-                    logger.error(f"{install_result.stdout}")
                     error_msg = error.group("msg").strip()
                     if "An error occurred while installing" in error_msg:
                         # try to get more detailed error message from next line
@@ -407,7 +407,7 @@ class NodeManager:
                 # use git command to clone repo
                 exec_command(["git", "clone", node_url, self.comfyui_path / "custom_nodes" / node_name], check=True)
                 # use cm_cli.py to init node
-                install_result = exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "post-install", node_path], check=True)
+                install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
                 self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
             else:
                 raise Exception(f"Unsupported source: {node_source}")
@@ -438,7 +438,7 @@ class NodeManager:
             self.progress.advance(msg=f"🗑️ Uninstalling node: {node_name}", style="info")
             # if nodes source from registry, try to use cm-cli process uninstalling first
             if node_source == "registry":
-                exec_command([sys.executable, str(COMFYUI_MN_PATH / "cm-cli.py"), "uninstall", node_name], check=True)
+                exec_command([sys.executable, COMFYUI_MN_CLI, "uninstall", node_name], check=True)
             # check again if node exists
             possible_path = self.comfyui_path / "custom_nodes" / node_name
             if possible_path.exists():
@@ -793,6 +793,7 @@ if __name__ == '__main__':
     WORKDIR = Path(os.environ.get('WORKDIR', "/workspace"))
     COMFYUI_PATH = Path(os.environ.get('COMFYUI_PATH', None)) or WORKDIR / "comfyui"
     COMFYUI_MN_PATH = Path(os.environ.get('COMFYUI_MN_PATH', None)) or COMFYUI_PATH / "custom_nodes" / "comfyui-manager"
+    COMFYUI_MN_CLI = str(COMFYUI_MN_PATH / "cm-cli.py")
     BOOT_CONFIG_DIR = WORKDIR / "boot_config"
     BOOT_CONFIG_PREV_PATH = WORKDIR / ".cache" / "boot_config.prev.json"
     SCRIPTS_DIR = WORKDIR / "scripts"
