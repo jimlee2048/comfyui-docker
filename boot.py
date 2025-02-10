@@ -17,7 +17,7 @@ from collections import defaultdict
 import aria2p
 
 
-console = Console()
+console = Console(width=200, log_path=False)
 
 logging.basicConfig(
     level=logging.INFO,
