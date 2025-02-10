@@ -93,30 +93,38 @@ def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 #     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
 
 
-def exec_script(script: Path) -> int:
+def exec_script(script: Path, check: bool = None) -> int:
     if not script.is_file():
         logger.warning(f"⚠️ Invalid script path: {script}")
-        return None
+        return 1
     try:
-        logger.info(f"🛠️ Executing script: {script}")
         if script.suffix == ".py":
-            res = exec_command([sys.executable, str(script)])
+            interpreter = [sys.executable]
         elif script.suffix == ".sh" and os.name == "posix":
-            res = exec_command(["bash", str(script)])
-        elif script.suffix == ".ps1" and os.name == "nt":
-            res = exec_command(["powershell", "-File", str(script)])
-        elif script.suffix == ".bat" and os.name == "nt":
-            res = exec_command([str(script)])
+            interpreter = ["bash"]
+        elif script.suffix in [".bat", ".ps1"] and os.name == "nt":
+            interpreter = ["powershell", "-File"]
         else:
             logger.warning(f"⚠️ Unsupported script type: {script}. Skipped.")
-            return None
+            return 1
+        cmd = interpreter + [str(script)]
+        res = exec_command(cmd)
         returncode = res.returncode
-        if returncode != 0:
+        if returncode == 0:
+            logger.info(f"✅ Successfully executed script: {script}")
+            return returncode
+        elif check:
+            raise subprocess.CalledProcessError(returncode, cmd, output=res.stdout)
+        else:
             logger.warning(f"⚠️ {script} exited with non-zero code: {returncode}")
-        return returncode
+            return returncode
+    except subprocess.CalledProcessError as e:
+        logger.error(f"{e.stdout}")
+        logger.error(f"❌ Failed to execute script: {script}")
+        return e.returncode
     except Exception as e:
-        logger.error(f"❌ Error executing {script}: {str(e)}")
-        return None
+        logger.error(f"❌ Failed to execute script: {script}\n{str(e)}")
+        return 1
 
 
 class BootProgress:
@@ -412,9 +420,11 @@ class NodeManager:
             else:
                 raise Exception(f"Unsupported source: {node_source}")
 
-            # execute post install script
+            # execute post-install-node script
             if 'script' in config:
-                exec_script(POST_INSTALL_NODE_SCRIPTS / config['script'])
+                script = config['script']
+                logger.info(f"🛠️ Executing post-install-node script: {script}")
+                exec_script(POST_INSTALL_NODE_SCRIPTS / script)
             return True
 
         except Exception as e:
@@ -726,12 +736,16 @@ class ComfyUIInitializer:
             return False
         scripts = sorted(dir.glob("*.sh"))
         if not scripts:
-            logger.info(f"ℹ️ No scripts found in {dir}.")
+            logger.info(f"ℹ️ No scripts found in {dir.name}.")
             return False
-        logger.info(f"🛠️ Found {len(scripts)} scripts in {dir}:")
+        scripts_count = len(scripts)
+        logger.info(f"🛠️ Found {scripts_count} scripts in {dir.name}:")
         for script in scripts:
             logger.info(f"└─ {script.name}")
+        progress = BootProgress()
+        progress.start(scripts_count)
         for script in scripts:
+            progress.advance(msg=f"🛠️ Executing {dir.name} script: {script.name}", style="info")
             exec_script(script)
         return True
 
