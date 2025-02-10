@@ -405,7 +405,7 @@ class NodeManager:
             elif node_source == "git":
                 node_url = config['url']
                 # use git command to clone repo
-                exec_command(["git", "clone", node_url, self.comfyui_path / "custom_nodes" / node_name], check=True)
+                exec_command(["git", "clone", node_url, str(node_path)], check=True)
                 # use cm_cli.py to init node
                 install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
                 self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
