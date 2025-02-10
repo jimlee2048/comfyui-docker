@@ -1,9 +1,9 @@
 # ComfyUI Docker Image
+[![GitHub Repo](https://img.shields.io/badge/GitHub-jimlee2048%2Fcomfyui--docker-blue?logo=github)](https://github.com/jimlee2048/comfyui-docker)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-jimlee2048%2Fcomfyui--docker-blue?logo=docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/jimlee2048/comfyui-docker/build-publish.yml)](https://github.com/jimlee2048/comfyui-docker/actions/workflows/build-publish.yml)
-[![Docker Image Version (tag nightly)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/nightly)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
-[![Docker Image Version (tag latest)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
+[![Docker Image Version (tag latest)](https://img.shields.io/docker/v/jimlee2048/comfyui-docker/latest?label=latest)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
-[![Docker Stars](https://img.shields.io/docker/stars/jimlee2048/comfyui-docker)](https://hub.docker.com/r/jimlee2048/comfyui-docker)
 
 A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image with automatic environment setup.
 
