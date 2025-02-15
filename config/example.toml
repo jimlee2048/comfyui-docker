@@ -7,6 +7,7 @@
 ## if node_id provided, url will be ignored
 # [[custom_nodes]]
 # url = "https://github.com/ltdrdata/ComfyUI-Impact-Pack"
+# branch = "main" # optional, use specify branch
 # script = "post-install-impact-pack.sh" # optional, store it in scripts/post-install-node
 
 # [[models]]

@@ -412,8 +412,13 @@ class NodeManager:
             # install node from git
             elif node_source == "git":
                 node_url = config['url']
+                node_branch = config.get('branch', None)
                 # use git command to clone repo
-                exec_command(["git", "clone", node_url, str(node_path)], check=True)
+                if node_branch:
+                    self.progress.print(f"⚠️ Cloning specific branch: {node_branch}")
+                    exec_command(["git", "clone", "-b", node_branch, node_url, str(node_path)], check=True)
+                else:
+                    exec_command(["git", "clone", node_url, str(node_path)], check=True)
                 # use cm_cli.py to init node
                 install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
                 self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
