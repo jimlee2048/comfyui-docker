@@ -63,8 +63,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install boot script requirements
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt \
-    && python ${COMFYUI_MN_PATH}/cm-cli.py save-snapshot
+    pip install -r requirements.txt
 
 COPY boot.py .
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes", "/root/.local/lib/python3.11"]
