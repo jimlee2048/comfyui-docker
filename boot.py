@@ -58,39 +58,30 @@ def json_default(obj):
     raise TypeError
 
 
-def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
-    try:
-        return subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
-    except subprocess.CalledProcessError as e:
-        logger.error(f"{e.stdout}")
-        logger.error(f"❌ Failed to execute command: {e.cmd}\n{e.stderr}")
-        return e
-
-
 # experimental: use subprocess.Popen to get real-time output
 # reference: https://github.com/python/cpython/blob/main/Lib/subprocess.py#L514
-# def exec_command(command: list[str], cwd: str = None, check: bool = False, **kwargs) -> subprocess.CompletedProcess:
-#     stdout_output = ""
-#     stderr_output = ""
-#     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd, **kwargs) as proc:
-#         try:
-#             for line in proc.stdout:
-#                 logger.info(line.strip())
-#                 stdout_output += line
-#         except subprocess.TimeoutExpired as exc:
-#             proc.kill()
-#             if os.name == "nt":
-#                 exc.stdout, exc.stderr = process.communicate()
-#             else:
-#                 proc.wait()
-#             raise
-#         except:
-#             proc.kill()
-#             raise
-#         retcode = proc.poll()
-#         if check and retcode:
-#             raise subprocess.CalledProcessError(proc.returncode, command, output=stdout_output, stderr=stderr_output)
-#     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
+def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+    stdout_output = ""
+    stderr_output = ""
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kwargs) as proc:
+        try:
+            for line in proc.stdout:
+                logger.info(line.strip())
+                stdout_output += line
+        except subprocess.TimeoutExpired as exc:
+            proc.kill()
+            if os.name == "nt":
+                exc.stdout, exc.stderr = proc.communicate()
+            else:
+                proc.wait()
+            raise
+        except Exception:
+            proc.kill()
+            raise
+        retcode = proc.poll()
+        if kwargs.get('check') and retcode:
+            raise subprocess.CalledProcessError(proc.returncode, command, output=stdout_output, stderr=stderr_output)
+    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
 
 
 def exec_script(script: Path, check: bool = None) -> int:
@@ -762,6 +753,10 @@ class ComfyUIInitializer:
         elif self.pre_scripts_dir.is_file():
             logger.warning(f"⚠️ {self.pre_scripts_dir} invalid, removing...")
             self.pre_scripts_dir.unlink()
+        # if UPDATE_NODE is enabled, try to update all installed nodes
+        if self.prev_config and UPDATE_NODE:
+            logger.info(f"🔄 Updating all installed nodes...")
+            exec_command([sys.executable, COMFYUI_MN_CLI, "update", "all"], check=False)
         # init nodes and models
         failed_config = defaultdict(list)
         if self.current_config and INIT_NODE:
@@ -827,6 +822,7 @@ if __name__ == '__main__':
     BOOT_CONFIG_INCLUDE = os.environ.get('BOOT_CONFIG_INCLUDE', None)
     BOOT_CONFIG_EXCLUDE = os.environ.get('BOOT_CONFIG_EXCLUDE', None)
     INIT_NODE = get_bool_env('INIT_NODE', True)
+    UPDATE_NODE = get_bool_env('UPDATE_NODE', False)
     INIT_NODE_EXCLUDE = {"comfyui-manager"}
     INIT_MODEL = get_bool_env('INIT_MODEL', True)
     CN_NETWORK = get_bool_env('CN_NETWORK', False)
