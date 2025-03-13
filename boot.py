@@ -60,7 +60,7 @@ def json_default(obj):
 
 # experimental: use subprocess.Popen to get real-time output
 # reference: https://github.com/python/cpython/blob/main/Lib/subprocess.py#L514
-def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+def exec_command(command: list[str], check=False, **kwargs) -> subprocess.CompletedProcess:
     stdout_output = ""
     stderr_output = ""
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kwargs) as proc:
@@ -68,18 +68,11 @@ def exec_command(command: list[str], **kwargs) -> subprocess.CompletedProcess:
             for line in proc.stdout:
                 logger.info(line.strip())
                 stdout_output += line
-        except subprocess.TimeoutExpired as exc:
-            proc.kill()
-            if os.name == "nt":
-                exc.stdout, exc.stderr = proc.communicate()
-            else:
-                proc.wait()
-            raise
         except Exception:
             proc.kill()
             raise
         retcode = proc.poll()
-        if kwargs.get('check') and retcode:
+        if check and retcode:
             raise subprocess.CalledProcessError(proc.returncode, command, output=stdout_output, stderr=stderr_output)
     return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
 
@@ -756,7 +749,10 @@ class ComfyUIInitializer:
         # if UPDATE_NODE is enabled, try to update all installed nodes
         if self.prev_config and UPDATE_NODE:
             logger.info(f"🔄 Updating all installed nodes...")
-            exec_command([sys.executable, COMFYUI_MN_CLI, "update", "all"], check=False)
+            try:
+                exec_command([sys.executable, COMFYUI_MN_CLI, "update", "all"])
+            except Exception:
+                logger.error(f"❌ Failed to execute node update command, skipping...")
         # init nodes and models
         failed_config = defaultdict(list)
         if self.current_config and INIT_NODE:
