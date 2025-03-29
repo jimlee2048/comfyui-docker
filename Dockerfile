@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     "numpy<2" \
     pyopengl pyopengl-accelerate \
     onnx onnxruntime onnxruntime-gpu \
-    transformers \
+    transformers diffusers accelerate \
     # i hate this stupid solution to avoid possible conflict :(
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
     huggingface_hub
@@ -63,7 +63,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install boot script requirements
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt
+    pip install -r requirements.txt \
+    nvitop
 
 COPY boot.py .
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes", "/root/.local/lib/python3.11"]
