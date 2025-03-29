@@ -1,5 +1,5 @@
-# https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch
-FROM nvcr.io/nvidia/pytorch:25.03-py3
+# https://hub.docker.com/r/pytorch/pytorch/
+FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -19,9 +19,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/ltdrdata/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
-# install comfyui - method 2: using comfy-cli
-# RUN comfy --skip-prompt install --version=nightly --skip-torch-or-directml --nvidia --cuda-version 12.4
-
 # master(nightly), or version tag like v0.1.0
 # https://github.com/comfyanonymous/ComfyUI/tags
 ARG COMFYUI_VERSION=master
@@ -37,7 +34,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 # suppress [WARNING: Running pip as the 'root' user]
 ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu126"
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \

@@ -19,9 +19,6 @@ RUN --mount=type=cache,target=/var/cache/apt \
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/ltdrdata/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
-# install comfyui - method 2: using comfy-cli
-# RUN comfy --skip-prompt install --version=nightly --skip-torch-or-directml --nvidia --cuda-version 12.4
-
 # master(nightly), or version tag like v0.1.0
 # https://github.com/comfyanonymous/ComfyUI/tags
 ARG COMFYUI_VERSION=master
