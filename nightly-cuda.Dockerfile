@@ -37,7 +37,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 # suppress [WARNING: Running pip as the 'root' user]
 ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu128"
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
