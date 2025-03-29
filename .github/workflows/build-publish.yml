@@ -14,8 +14,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "latest.Dockerfile"
-      - "nightly.Dockerfile"
+      - "latest-cuda.Dockerfile"
+      - "nightly-cuda.Dockerfile"
       - "boot.py"
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
         if: steps.cache-nightly-hash.outputs.cache-hit != 'true'
         run: echo ${{ steps.get-nightly-hash.outputs.comfyui }} | tee .nightly-hash
 
-  build-latest:
+  build-latest-cuda:
     needs: fetch-upstream
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_latest == 'true'
@@ -95,7 +95,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: latest.Dockerfile
+          file: latest-cuda.Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -104,8 +104,9 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             COMFYUI_VERSION=${{ needs.fetch-upstream.outputs.latest_tag }}
+            BASE_IMAGE_TAG=2.6.0-cuda12.6-cudnn9-runtime
 
-  build-nightly:
+  build-nightly-cuda:
     needs: fetch-upstream
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_nightly == 'true'
@@ -137,7 +138,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: nightly.Dockerfile
+          file: nightly-cuda.Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -146,3 +147,4 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             COMFYUI_VERSION=master
+            BASE_IMAGE_TAG=25.03-py3

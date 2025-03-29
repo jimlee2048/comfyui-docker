@@ -1,4 +1,6 @@
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
+# https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch
+ARG BASE_IMAGE_TAG=
+FROM nvcr.io/nvidia/pytorch:${BASE_IMAGE_TAG}
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}

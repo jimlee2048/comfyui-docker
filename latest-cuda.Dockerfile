@@ -1,4 +1,6 @@
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
+# https://hub.docker.com/r/pytorch/pytorch/
+ARG BASE_IMAGE_TAG=
+FROM pytorch/pytorch:${BASE_IMAGE_TAG}
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}

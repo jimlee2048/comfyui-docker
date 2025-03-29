@@ -10,12 +10,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 ⚠️ **Note**: This image is designed for personal use with GUI access, not for production server deployments.
 
 ## Features
-- Ready-to-use Python environment with:
-  - Python: 3.11
-  - CUDA: 12.6
-  - PyTorch: 2.6.0
-  - xformers
-  - Other common ML packages (`transformers`, `onnxruntime`, `opencv-python`, etc.)
+- Ready-to-use Python environment with common ML packages: `xformers`, `transformers`, `onnxruntime`, `opencv-python`, etc.
   - See [Dockerfile](Dockerfile) for complete details
 - Automated management of custom nodes & models:
   - Configuration-driven setup during startup
@@ -27,11 +22,11 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 - Optional optimizations for users in the Chinese Mainland (mirrors for pip/Hugging Face/Civitai)
 
 ## Available Image Tags
-- `nightly`: Development branch (master) of ComfyUI.
-  - Rebuilt daily to track the latest changes.
-- `latest`: Latest release version of ComfyUI. 
-  - Check daily and update when a new release is available.
-- `vX.Y.Z`: Specific version of ComfyUI (e.g. v0.7.0).
+
+| Image Tag           | Base Image                                                                                                                                               | ComfyUI Version                                                                                                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nightly`           | [![NVIDIA PyTorch](https://img.shields.io/badge/NVIDIA-PyTorch%20NGC-76B900?logo=nvidia)](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch) | [![ComfyUI Nightly](https://img.shields.io/github/last-commit/comfyanonymous/ComfyUI?label=nightly&logo=github)](https://github.com/comfyanonymous/ComfyUI/tree/master)   |
+| `latest` / `vX.Y.Z` | [![PyTorch](https://img.shields.io/badge/PyTorch-Official%20Image-EE4C2C?logo=pytorch)](https://hub.docker.com/r/pytorch/pytorch/)                       | [![ComfyUI Release](https://img.shields.io/github/v/release/comfyanonymous/ComfyUI?label=release&logo=github)](https://github.com/comfyanonymous/ComfyUI/releases/latest) |
 
 ## Environment Variables
 | Variable            | Description                                                                                                                                                       | Default |
