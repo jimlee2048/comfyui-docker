@@ -14,7 +14,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "Dockerfile"
+      - "latest.Dockerfile"
+      - "nightly.Dockerfile"
       - "boot.py"
 
 jobs:
@@ -94,6 +95,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: latest.Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -135,6 +137,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: nightly.Dockerfile
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
