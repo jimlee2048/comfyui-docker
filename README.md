@@ -40,6 +40,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 | CIVITAI_API_TOKEN   | [Civitai API token](https://education.civitai.com/civitais-guide-to-downloading-via-api/#how-do-i-download-via-the-api) for downloading access restricted models. |         |
 | CN_NETWORK          | Enable network optimization for Chinese Mainland users.                                                                                                           | false   |
 | INIT_NODE           | Enable automatic installs/removes of custom nodes at startup                                                                                                      | true    |
+| UPDATE_NODE         | Enable automatic updates of custom nodes at startup                                                                                                               | false   |
 | INIT_MODEL          | Enable automatic downloads/removes of models at startup                                                                                                           | true    |
 | BOOT_CONFIG_INCLUDE | Regex pattern for including boot config files.                                                                                                                    |         |
 | BOOT_CONFIG_EXCLUDE | Regex pattern for excluding boot config files.                                                                                                                    |         |
