@@ -1,6 +1,5 @@
 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch
-ARG BASE_IMAGE_TAG=
-FROM nvcr.io/nvidia/pytorch:${BASE_IMAGE_TAG}
+FROM nvcr.io/nvidia/pytorch:25.03-py3
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -38,7 +37,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 # suppress [WARNING: Running pip as the 'root' user]
 ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu126"
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu128"
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \

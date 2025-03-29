@@ -67,6 +67,13 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_latest == 'true'
     steps:
+      - name: Maximize build disk space
+        uses: easimon/maximize-build-space@master
+        with:
+          overprovision-lvm: "true"
+          remove-android: "true"
+          remove-dotnet: "true"
+
       - name: Git checkout
         uses: actions/checkout@v4
 
@@ -104,13 +111,19 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             COMFYUI_VERSION=${{ needs.fetch-upstream.outputs.latest_tag }}
-            BASE_IMAGE_TAG=2.6.0-cuda12.6-cudnn9-runtime
 
   build-nightly-cuda:
     needs: fetch-upstream
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_nightly == 'true'
     steps:
+      - name: Maximize build disk space
+        uses: easimon/maximize-build-space@master
+        with:
+          overprovision-lvm: "true"
+          remove-android: "true"
+          remove-dotnet: "true"
+
       - name: Git checkout
         uses: actions/checkout@v4
 
@@ -147,4 +160,3 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             COMFYUI_VERSION=master
-            BASE_IMAGE_TAG=25.03-py3

@@ -106,5 +106,4 @@ docker compose up -d
   ```
 ## TODO
 - [ ] ROCm version for AMD GPU
-- [ ] MPS version for Apple silicon
 - [ ] XPU version for Intel GPU
