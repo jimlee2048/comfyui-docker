@@ -43,6 +43,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
     xformers
 
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+    triton \
+    sageattention@git+https://github.com/thu-ml/SageAttention
+
 # isolate critical python packages
 ENV PIP_USER=true
 ENV PATH="${PATH}:/root/.local/bin"
