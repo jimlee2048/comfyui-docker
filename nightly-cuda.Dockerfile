@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
+FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-devel
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -42,6 +42,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r ${COMFYUI_PATH}/requirements.txt \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
     xformers
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+    triton \
+    sageattention@git+https://github.com/thu-ml/SageAttention
 
 # isolate critical python packages
 ENV PIP_USER=true
