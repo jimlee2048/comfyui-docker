@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-devel
+FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
