@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 
 # install comfyui - method 1: manually clone
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
-    && git clone --single-branch https://github.com/ltdrdata/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
+    && git clone --single-branch https://github.com/Comfy-Org/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
 # master(nightly), or version tag like v0.1.0
 # https://github.com/comfyanonymous/ComfyUI/tags
