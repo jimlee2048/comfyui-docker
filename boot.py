@@ -185,6 +185,7 @@ class BootConfigManager:
     def load_boot_config(self) -> dict:
 
         config_dir = Path(self.config_dir)
+        config_files = []
 
         if config_dir.is_dir():
             logger.info(f"📂 Loading boot config from {self.config_dir}")
