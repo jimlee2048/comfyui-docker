@@ -1,5 +1,4 @@
-# https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-devel
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -11,9 +10,18 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    python3.12-full python3.12-dev python3-pip ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# pip config
+# let .pyc files be stored in one place
+ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
+# suppress [WARNING: Running pip as the 'root' user]
+ENV PIP_ROOT_USER_ACTION=ignore
+# bypass PEP 668
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
 
 # install comfyui - method 1: manually clone
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
@@ -29,24 +37,16 @@ RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
 ARG COMFYUI_MN_VERSION=main
 RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 
-# pip config
-# let .pyc files be stored in one place
-ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
-# suppress [WARNING: Running pip as the 'root' user]
-ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu126"
+# pytorch nightly
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+    --pre torch torchvision torchaudio
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     -r ${COMFYUI_PATH}/requirements.txt \
-    -r ${COMFYUI_MN_PATH}/requirements.txt \
-    xformers
-
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install \
-#     triton \
-#     sageattention@git+https://github.com/thu-ml/SageAttention
+    -r ${COMFYUI_MN_PATH}/requirements.txt
 
 # isolate critical python packages
 ENV PIP_USER=true
@@ -70,6 +70,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     nvitop
 
 COPY boot.py .
-VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes", "/root/.local/lib/python3.11"]
+VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
-CMD [ "python", "boot.py" ]
+CMD [ "python3", "boot.py" ]
