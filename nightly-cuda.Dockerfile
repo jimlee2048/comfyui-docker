@@ -37,7 +37,7 @@ RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
 ARG COMFYUI_MN_VERSION=main
 RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 
-# pytorch nightly
+# install pytorch nightly
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     --pre torch torchvision torchaudio
@@ -47,6 +47,18 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     -r ${COMFYUI_PATH}/requirements.txt \
     -r ${COMFYUI_MN_PATH}/requirements.txt
+
+# install triton
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --pre triton  
+
+# install xformers
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install git+https://github.com/facebookresearch/xformers.git
+
+# # install sageattention2
+# RUN --mount=type=cache,target=/root/.cache/pip \
+#     pip install git+https://github.com/thu-ml/SageAttention.git
 
 # isolate critical python packages
 ENV PIP_USER=true
