@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     -r ${COMFYUI_PATH}/requirements.txt \
     -r ${COMFYUI_MN_PATH}/requirements.txt \
-    xformers
+    xformers triton
 
 # RUN --mount=type=cache,target=/root/.cache/pip \
 #     pip install \
