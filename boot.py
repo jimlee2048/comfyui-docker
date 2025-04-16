@@ -154,6 +154,16 @@ class BootConfigManager:
         self.prev_nodes = self.load_nodes_config(self.prev_config)
         self.prev_models = self.load_models_config(self.prev_config)
 
+    def _sort_by_numeric_prefix(self, file_path: Path) -> tuple:
+        filename = file_path.name
+        # Extract numeric prefix if it exists
+        pattern = compile_pattern(r'^(\d+)-')
+        match = pattern.match(filename)
+        if match:
+            return (int(match.group(1)), filename)
+        # If no numeric prefix, sort after numbered files
+        return (float('inf'), filename)
+
     def _drop_duplicates_config(self, config: list[dict], cond_key: list[str]) -> tuple[list[dict], list[dict], int]:
         unique_items = []
         duplicate_items = []
@@ -208,6 +218,9 @@ class BootConfigManager:
             if exclude_pattern:
                 logger.info(f"⚡ Exclude filter: {BOOT_CONFIG_EXCLUDE}")
             config_files = filtered_files
+
+        # sort config files by numeric prefix
+        config_files.sort(key=self._sort_by_numeric_prefix)
 
         logger.info(f"📄 Found {len(config_files)} config files:")
         for file in config_files:
