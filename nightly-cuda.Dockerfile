@@ -52,15 +52,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --pre triton  
 
-ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
+ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;10.0;12.0"
 ARG MAX_JOBS=4
 # install xformers
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -U git+https://github.com/facebookresearch/xformers.git
 
-# # install sageattention2
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install -U git+https://github.com/thu-ml/SageAttention.git
+ARG SAGEATTENTION_CUDA_ARCH_LIST="8.0 8.6 8.9 9.0 12.0"
+# install sageattention2
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -U git+https://github.com/woct0rdho/SageAttention.git
 
 # isolate critical python packages
 ENV PIP_USER=true
