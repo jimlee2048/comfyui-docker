@@ -201,7 +201,7 @@ class BootConfigManager:
             logger.info(f"📂 Loading boot config from {self.config_dir}")
             config_files = list(config_dir.rglob("*.toml"))
         elif config_dir.is_file():
-            logger.warning(f"⚠️ Invalid boot config detected, removing...")
+            logger.warning("⚠️ Invalid boot config detected, removing...")
             config_dir.unlink()
             return {}
 
@@ -241,10 +241,10 @@ class BootConfigManager:
         if prev_path.is_file():
             logger.info(f"📂 Loading previous config: {prev_path}")
         elif prev_path.is_dir():
-            logger.warning(f"⚠️ Invalid previous config detected, removing...")
+            logger.warning("⚠️ Invalid previous config detected, removing...")
             shutil.rmtree(prev_path)
         else:
-            logger.info(f"ℹ️ No previous config found")
+            logger.info("ℹ️ No previous config found")
             return {}
         return json.loads(prev_path.read_text())
 
@@ -335,7 +335,7 @@ class NodeManager:
         try:
             _ = git.Repo(path).git_dir
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def is_node_exists(self, config: dict) -> bool:
@@ -414,7 +414,7 @@ class NodeManager:
                         self.progress.print(f"⚠️ {node_name} already exists. Enabled.", style="warning")
                         return True
                 else:
-                    raise Exception(f"Failed to parse installation result")
+                    raise Exception("Failed to parse installation result")
             # install node from git
             elif node_source == "git":
                 node_url = config['url']
@@ -471,7 +471,7 @@ class NodeManager:
 
     def init_nodes(self, current_config: list[dict], prev_config: list[dict] = None) -> bool:
         if not current_config:
-            logger.info(f"📦 No nodes in config")
+            logger.info("📦 No nodes in config")
             return False
 
         if not prev_config:
@@ -482,7 +482,7 @@ class NodeManager:
             uninstall_nodes = [node for node in prev_config if node not in current_config]
 
         if not install_nodes and not uninstall_nodes:
-            logger.info(f"ℹ️ No changes in nodes")
+            logger.info("ℹ️ No changes in nodes")
             return False
         if install_nodes:
             install_count = len(install_nodes)
@@ -520,7 +520,7 @@ class ModelManager:
         self._start_aria2c()
 
     def _start_aria2c(self):
-        logger.info(f"🚀 Starting aria2c...")
+        logger.info("🚀 Starting aria2c...")
         try:
             subprocess.run([
                 "aria2c",
@@ -541,10 +541,10 @@ class ModelManager:
             for _ in range(max_retries):
                 try:
                     self.aria2.get_stats()
-                    logger.info(f"✅ aria2c is ready")
+                    logger.info("✅ aria2c is ready")
                     break
-                except Exception as e:
-                    logger.warning(f"⚠️ aria2c still not ready, retrying...")
+                except Exception:
+                    logger.warning("⚠️ aria2c still not ready, retrying...")
                     time.sleep(2)
             else:
                 raise Exception(f"aria2c is not ready after {max_retries} retries")
@@ -618,7 +618,7 @@ class ModelManager:
                         download.remove(files=True)
                         raise Exception(f"{download.error_message}")
                     if download.status == "removed":
-                        raise Exception(f"Download was removed")
+                        raise Exception("Download was removed")
                     self.progress.print(f"{model_filename}: {download.progress_string()} | {download.completed_length_string()}/{download.total_length_string()} [{download.eta_string()}, {download.download_speed_string()}]", "info")
                     time.sleep(1)
                 logger.info(f"✅ Downloaded: {model_filename} -> {model_dir}")
@@ -631,14 +631,14 @@ class ModelManager:
                     # hugingface: auth header
                     if attempt == 1 and self._is_huggingface_url(model_url) and HF_API_TOKEN:
                         download_options['header'] = f"Authorization: Bearer {HF_API_TOKEN}"
-                        self.progress.print(f"🔑 Retrying with provided HF_API_TOKEN", "info")
+                        self.progress.print("🔑 Retrying with provided HF_API_TOKEN", "info")
                     # civitai: query token
                     elif attempt == 1 and self._is_civitai_url(model_url) and CIVITAI_API_TOKEN:
                         parts = urllib.parse.urlsplit(model_url)
                         query = dict(urllib.parse.parse_qsl(parts.query))
                         query['token'] = CIVITAI_API_TOKEN
                         model_url = parts._replace(query=urllib.parse.urlencode(query)).geturl()
-                        self.progress.print(f"🔑 Retrying with provided CIVITAI_API_TOKEN", "info")
+                        self.progress.print("🔑 Retrying with provided CIVITAI_API_TOKEN", "info")
                     else:
                         self.progress.print(f"❌ Authorization failed for {model_url}. Skipped.", "error")
                         return False
@@ -672,7 +672,7 @@ class ModelManager:
 
     def init_models(self, current_config: list, prev_config: list = None) -> bool:
         if not current_config:
-            logger.info(f"📦 No models in config")
+            logger.info("📦 No models in config")
             return False
 
         models_to_download = []
@@ -695,7 +695,7 @@ class ModelManager:
                     models_to_remove.append(prev_model)
 
         if not models_to_download and not models_to_move and not models_to_remove:
-            logger.info(f"ℹ️ No changes in models")
+            logger.info("ℹ️ No changes in models")
             return False
         if models_to_download:
             download_count = len(models_to_download)
@@ -762,18 +762,18 @@ class ComfyUIInitializer:
     def run(self):
         # execute pre-init scripts
         if self.pre_scripts_dir.is_dir():
-            logger.info(f"🛠️ Scanning pre-init scripts...")
+            logger.info("🛠️ Scanning pre-init scripts...")
             self._exec_scripts_in_dir(self.pre_scripts_dir)
         elif self.pre_scripts_dir.is_file():
             logger.warning(f"⚠️ {self.pre_scripts_dir} invalid, removing...")
             self.pre_scripts_dir.unlink()
         # if UPDATE_NODE is enabled, try to update all installed nodes
         if self.prev_config and UPDATE_NODE:
-            logger.info(f"🔄 Updating all installed nodes...")
+            logger.info("🔄 Updating all installed nodes...")
             try:
                 exec_command([sys.executable, COMFYUI_MN_CLI, "update", "all"])
             except Exception:
-                logger.error(f"❌ Failed to execute node update command, skipping...")
+                logger.error("❌ Failed to execute node update command, skipping...")
         # init nodes and models
         failed_config = defaultdict(list)
         if self.current_config and INIT_NODE:
@@ -786,7 +786,7 @@ class ComfyUIInitializer:
             failed_config['models'] = model_manager.failed_list
         # execute post init scripts
         if self.post_scripts_dir.is_dir():
-            logger.info(f"🛠️ Scanning post-init scripts...")
+            logger.info("🛠️ Scanning post-init scripts...")
             self._exec_scripts_in_dir(self.post_scripts_dir)
         elif self.post_scripts_dir.is_file():
             logger.warning(f"⚠️ {self.post_scripts_dir} invalid, removing...")
@@ -812,13 +812,13 @@ class ComfyUIInitializer:
         self.config_loader.write_config_cache(BOOT_CONFIG_PREV_PATH, succeeded_config)
 
         # launch comfyui
-        logger.info(f"🚀 Launching ComfyUI...")
+        logger.info("🚀 Launching ComfyUI...")
         launch_args_list = ["--listen", "0.0.0.0,::", "--port", "8188"] + (COMFYUI_EXTRA_ARGS.split() if COMFYUI_EXTRA_ARGS else [])
         subprocess.run([sys.executable, str(self.comfyui_path / "main.py")] + launch_args_list, check=False)
 
 
 if __name__ == '__main__':
-    logger.info(f"Starting boot process")
+    logger.info("Starting boot process")
 
     # Environment variables
     WORKDIR = Path(os.environ.get('WORKDIR', "/workspace"))
@@ -851,16 +851,16 @@ if __name__ == '__main__':
 
     # chinese mainland network settings
     if CN_NETWORK:
-        logger.info(f"🌐 Using CN network optimization")
+        logger.info("🌐 Using CN network optimization")
         # pip source to ustc mirror
         os.environ['PIP_INDEX_URL'] = 'https://mirrors.ustc.edu.cn/pypi/web/simple'
         # huggingface endpoint to hf-mirror.com
         os.environ['HF_ENDPOINT'] = "https://hf-mirror.com"
         if HF_API_TOKEN:
-            logger.warning(f"⚠️ HF_API_TOKEN will be sent to hf-mirror.com")
+            logger.warning("⚠️ HF_API_TOKEN will be sent to hf-mirror.com")
         if CIVITAI_API_TOKEN:
-            logger.warning(f"⚠️ CIVITAIAPI_TOKEN will be sent to civitai.work")
+            logger.warning("⚠️ CIVITAIAPI_TOKEN will be sent to civitai.work")
 
     app = ComfyUIInitializer(BOOT_CONFIG_DIR, COMFYUI_PATH, PRE_INIT_SCRIPTS, POST_INIT_SCRIPTS)
-    logger.info(f"Initializing ComfyUI...")
+    logger.info("Initializing ComfyUI...")
     app.run()
