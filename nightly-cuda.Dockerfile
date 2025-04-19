@@ -52,20 +52,17 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --pre triton  
 
-# ARG TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;9.0;10.0;12.0+PTX"
-# ARG MAX_JOBS=4
-# # install xformers
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install -U git+https://github.com/facebookresearch/xformers.git
-
-ARG SAGEATTENTION_CUDA_ARCH_LIST="8.0 8.6 8.9 9.0 12.0"
-ARG TORCH_IS_NIGHTLY=1
-ARG TORCH_MINOR_VERSION=8
-ARG TORCH_PATCH_VERSION=0
-ARG CUDA_MINOR_VERSION=8
-# install sageattention2
+# install xformers
+# not built for sm90, it make >=sm100 also use unsupported flashattention3
+ARG MAX_JOBS=4
+ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;12.0"
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -U git+https://github.com/woct0rdho/SageAttention.git
+    pip install -v -U git+https://github.com/facebookresearch/xformers.git
+
+# install sageattention2
+ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -U git+https://github.com/jimlee2048/SageAttention.git
 
 # isolate critical python packages
 ENV PIP_USER=true
