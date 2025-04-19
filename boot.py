@@ -1,21 +1,21 @@
-import os
-import sys
-import subprocess
-import shutil
-import re
-import time
-from pathlib import Path
-import tomllib
-import urllib.parse
 import json
+import logging
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+import urllib.parse
+from collections import defaultdict
+from pathlib import Path
+
+import aria2p
 import git
 import giturlparse
-import logging
+import tomllib
 from rich.console import Console
 from rich.logging import RichHandler
-from collections import defaultdict
-import aria2p
-
 
 console = Console(width=160, log_path=False)
 
@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(message)s",
     datefmt="[%X]",
-    handlers=[RichHandler(console=console, show_path=False)]
+    handlers=[RichHandler(console=console, show_path=False)],
 )
 logger = logging.getLogger("boot")
 
@@ -60,10 +60,14 @@ def json_default(obj):
 
 # experimental: use subprocess.Popen to get real-time output
 # reference: https://github.com/python/cpython/blob/main/Lib/subprocess.py#L514
-def exec_command(command: list[str], check=False, **kwargs) -> subprocess.CompletedProcess:
+def exec_command(
+    command: list[str], check=False, **kwargs
+) -> subprocess.CompletedProcess:
     stdout_output = ""
     stderr_output = ""
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kwargs) as proc:
+    with subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, **kwargs
+    ) as proc:
         try:
             for line in proc.stdout:
                 logger.info(line.strip())
@@ -73,8 +77,12 @@ def exec_command(command: list[str], check=False, **kwargs) -> subprocess.Comple
             raise
         retcode = proc.poll()
         if check and retcode:
-            raise subprocess.CalledProcessError(proc.returncode, command, output=stdout_output, stderr=stderr_output)
-    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout_output, stderr_output)
+            raise subprocess.CalledProcessError(
+                proc.returncode, command, output=stdout_output, stderr=stderr_output
+            )
+    return subprocess.CompletedProcess(
+        proc.args, proc.returncode, stdout_output, stderr_output
+    )
 
 
 def exec_script(script: Path, check: bool = None) -> int:
@@ -157,14 +165,16 @@ class BootConfigManager:
     def _sort_by_numeric_prefix(self, file_path: Path) -> tuple:
         filename = file_path.name
         # Extract numeric prefix if it exists
-        pattern = compile_pattern(r'^(\d+)-')
+        pattern = compile_pattern(r"^(\d+)-")
         match = pattern.match(filename)
         if match:
             return (int(match.group(1)), filename)
         # If no numeric prefix, sort after numbered files
-        return (float('inf'), filename)
+        return (float("inf"), filename)
 
-    def _drop_duplicates_config(self, config: list[dict], cond_key: list[str]) -> tuple[list[dict], list[dict], int]:
+    def _drop_duplicates_config(
+        self, config: list[dict], cond_key: list[str]
+    ) -> tuple[list[dict], list[dict], int]:
         unique_items = []
         duplicate_items = []
         unique_kv_tracker = set()
@@ -184,16 +194,12 @@ class BootConfigManager:
             raise Exception(f"Invalid URL: {url}")
         # chinese mainland network settings
         if CN_NETWORK:
-            fr_map = {
-                'huggingface.co': 'hf-mirror.com',
-                'civitai.com': 'civitai.work'
-            }
+            fr_map = {"huggingface.co": "hf-mirror.com", "civitai.com": "civitai.work"}
             if parsed_url.netloc in fr_map:
                 url = parsed_url._replace(netloc=fr_map[parsed_url.netloc]).geturl()
         return url
 
     def load_boot_config(self) -> dict:
-
         config_dir = Path(self.config_dir)
         config_files = []
 
@@ -209,9 +215,10 @@ class BootConfigManager:
             include_pattern = compile_pattern(BOOT_CONFIG_INCLUDE)
             exclude_pattern = compile_pattern(BOOT_CONFIG_EXCLUDE)
             filtered_files = [
-                f for f in config_files
-                if (not include_pattern or include_pattern.search(f.name)) and
-                (not exclude_pattern or not exclude_pattern.search(f.name))
+                f
+                for f in config_files
+                if (not include_pattern or include_pattern.search(f.name))
+                and (not exclude_pattern or not exclude_pattern.search(f.name))
             ]
             if include_pattern:
                 logger.info(f"⚡ Include filter: {BOOT_CONFIG_INCLUDE}")
@@ -260,31 +267,31 @@ class BootConfigManager:
             return False
 
     def load_nodes_config(self, boot_config: dict) -> list[dict]:
-        nodes_config = boot_config.get('custom_nodes', [])
+        nodes_config = boot_config.get("custom_nodes", [])
         if not nodes_config:
             return []
 
         for node in nodes_config.copy():
             try:
                 # source: registry
-                if 'node_id' in node:
-                    node['source'] = "registry"
-                    node['name'] = node['node_id']
+                if "node_id" in node:
+                    node["source"] = "registry"
+                    node["name"] = node["node_id"]
                     # use 'latest' as default version
-                    if 'version' not in node:
-                        node['version'] = "latest"
+                    if "version" not in node:
+                        node["version"] = "latest"
                 # source: git
-                elif 'url' in node:
-                    node['source'] = "git"
-                    node['url'] = self._preprocess_url(node['url'])
-                    node_repo = giturlparse.parse(node['url'])
+                elif "url" in node:
+                    node["source"] = "git"
+                    node["url"] = self._preprocess_url(node["url"])
+                    node_repo = giturlparse.parse(node["url"])
                     # validate git url
                     if not node_repo.valid:
                         raise Exception(f"Invalid git URL: {node['url']}")
-                    node['name'] = node_repo.name.lower()
+                    node["name"] = node_repo.name.lower()
                 else:
                     raise Exception("None of 'node_id' or 'url' found in node config")
-                if node['name'] in self.node_exclude:
+                if node["name"] in self.node_exclude:
                     logger.warning(f"⚠️ Skip excluded node: {node['name']}")
                     nodes_config.remove(node)
                     continue
@@ -293,7 +300,7 @@ class BootConfigManager:
                 continue
 
         # drop duplicates
-        nodes_config, duplicates = self._drop_duplicates_config(nodes_config, ['name'])
+        nodes_config, duplicates = self._drop_duplicates_config(nodes_config, ["name"])
         if duplicates:
             logger.warning(f"⚠️ Found {len(duplicates)} duplicate nodes:")
             for node in duplicates:
@@ -302,20 +309,22 @@ class BootConfigManager:
         return nodes_config
 
     def load_models_config(self, boot_config: dict) -> list[dict]:
-        models_config = boot_config.get('models', [])
+        models_config = boot_config.get("models", [])
         if not models_config:
             return []
 
         for model in models_config.copy():
             try:
-                model['url'] = self._preprocess_url(model['url'])
-                model['path'] = str(COMFYUI_PATH / model['dir'] / model['filename'])
+                model["url"] = self._preprocess_url(model["url"])
+                model["path"] = str(COMFYUI_PATH / model["dir"] / model["filename"])
             except KeyError as e:
                 logger.warning(f"⚠️ Invalid model config: {model}\n{str(e)}")
                 continue
 
         # drop duplicates
-        models_config, duplicates = self._drop_duplicates_config(models_config, ['path'])
+        models_config, duplicates = self._drop_duplicates_config(
+            models_config, ["path"]
+        )
         if duplicates:
             logger.warning(f"⚠️ Found {len(duplicates)} duplicate models:")
             for model in duplicates:
@@ -339,8 +348,8 @@ class NodeManager:
             return False
 
     def is_node_exists(self, config: dict) -> bool:
-        node_name = config['name']
-        node_source = config['source']
+        node_name = config["name"]
+        node_source = config["source"]
         node_path = self.comfyui_path / "custom_nodes" / node_name
         if not node_path.exists():
             return False
@@ -355,9 +364,12 @@ class NodeManager:
             node_path.unlink()
             return False
 
-    def setup_node(self, node_path:Path) -> bool:
+    def setup_node(self, node_path: Path) -> bool:
         try:
-            exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
+            exec_command(
+                [sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)],
+                check=True,
+            )
             logger.info(f"✅ Successfully initialized node: {node_path.name}")
             return True
         except Exception as e:
@@ -366,73 +378,105 @@ class NodeManager:
 
     def install_node(self, config: dict) -> bool:
         try:
-            node_name = config['name']
-            node_source = config['source']
+            node_name = config["name"]
+            node_source = config["source"]
             node_path = self.comfyui_path / "custom_nodes" / node_name
             if node_name in self.node_exclude:
-                self.progress.advance(msg=f"⚠️ Not allowed to install excluded node: {node_name}", style="warning")
+                self.progress.advance(
+                    msg=f"⚠️ Not allowed to install excluded node: {node_name}",
+                    style="warning",
+                )
                 return False
             if self.is_node_exists(config):
-                self.progress.advance(msg=f"ℹ️ {node_name} already exists. Skipped.", style="info")
+                self.progress.advance(
+                    msg=f"ℹ️ {node_name} already exists. Skipped.", style="info"
+                )
                 return True
             self.progress.advance(msg=f"📦 Installing node: {node_name}", style="info")
 
             # install node from registry
             if node_source == "registry":
-                node_version = config['version']
-                install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "install", f"{node_name}@{node_version}"], check=True)
+                node_version = config["version"]
+                install_result = exec_command(
+                    [
+                        sys.executable,
+                        COMFYUI_MN_CLI,
+                        "install",
+                        f"{node_name}@{node_version}",
+                    ],
+                    check=True,
+                )
                 # reference:original cm-cli.py output format
                 # https://github.com/ltdrdata/ComfyUI-Manager/blob/411c0633a3d542ac20ea8cb47c9578f22fb19854/cm-cli.py#L162
                 # check if error msg print exists
                 ignore_errors = [
                     "PyTorch is not installed",
-                    "pip's dependency resolver does not currently take into account all the packages that are installed"
+                    "pip's dependency resolver does not currently take into account all the packages that are installed",
                 ]
-                ignore_errors_pattern = f"(?!.*({'|'.join(re.escape(err) for err in ignore_errors)}))"
-                error_pattern = compile_pattern(rf"ERROR:(?P<msg>{ignore_errors_pattern}.+)")
+                ignore_errors_pattern = (
+                    f"(?!.*({'|'.join(re.escape(err) for err in ignore_errors)}))"
+                )
+                error_pattern = compile_pattern(
+                    rf"ERROR:(?P<msg>{ignore_errors_pattern}.+)"
+                )
                 error_match = error_pattern.finditer(install_result.stdout)
                 for error in error_match:
                     error_msg = error.group("msg").strip()
                     if "An error occurred while installing" in error_msg:
                         # try to get more detailed error message from next line
-                        remaining_stdout = install_result.stdout[error.end():].strip().splitlines()
+                        remaining_stdout = (
+                            install_result.stdout[error.end() :].strip().splitlines()
+                        )
                         next_line = remaining_stdout[0].strip()
                         error_msg = next_line if next_line else error_msg
                     raise Exception(f"{error_msg}")
 
                 # check if installation result print exists
-                result_pattern = compile_pattern(r"1\/1\s\[(?P<result>.+?)\]\s(?P<msg>.+)")
+                result_pattern = compile_pattern(
+                    r"1\/1\s\[(?P<result>.+?)\]\s(?P<msg>.+)"
+                )
                 result_match = result_pattern.search(install_result.stdout)
                 if result_match:
                     result = result_match.group("result")
                     if result == "INSTALLED":
-                        self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
+                        self.progress.print(
+                            f"✅ Successfully installed node: {node_name}", style="info"
+                        )
                     elif result == "SKIP":
-                        self.progress.print(f"ℹ️ {node_name} already exists. Skipped.", style="info")
+                        self.progress.print(
+                            f"ℹ️ {node_name} already exists. Skipped.", style="info"
+                        )
                         return True
                     elif result == "ENABLED":
-                        self.progress.print(f"⚠️ {node_name} already exists. Enabled.", style="warning")
+                        self.progress.print(
+                            f"⚠️ {node_name} already exists. Enabled.", style="warning"
+                        )
                         return True
                 else:
                     raise Exception("Failed to parse installation result")
             # install node from git
             elif node_source == "git":
-                node_url = config['url']
-                node_branch = config.get('branch', None)
+                node_url = config["url"]
+                node_branch = config.get("branch", None)
                 # use git command to clone repo
                 if node_branch:
                     self.progress.print(f"⚠️ Cloning specific branch: {node_branch}")
-                    exec_command(["git", "clone", "-b", node_branch, node_url, str(node_path)], check=True)
+                    exec_command(
+                        ["git", "clone", "-b", node_branch, node_url, str(node_path)],
+                        check=True,
+                    )
                 else:
                     exec_command(["git", "clone", node_url, str(node_path)], check=True)
                 self.setup_node(node_path)
-                self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
+                self.progress.print(
+                    f"✅ Successfully installed node: {node_name}", style="info"
+                )
             else:
                 raise Exception(f"Unsupported source: {node_source}")
 
             # execute post-install-node script
-            if 'script' in config:
-                script = config['script']
+            if "script" in config:
+                script = config["script"]
                 logger.info(f"🛠️ Executing post-install-node script: {script}")
                 exec_script(POST_INSTALL_NODE_SCRIPTS / script)
             return True
@@ -447,18 +491,25 @@ class NodeManager:
 
     def uninstall_node(self, config: dict) -> bool:
         try:
-            node_name = config['name']
-            node_source = config['source']
+            node_name = config["name"]
+            node_source = config["source"]
             if node_name in self.node_exclude:
-                self.progress.advance(msg=f"⚠️ Not allowed to uninstall excluded node: {node_name}", style="warning")
+                self.progress.advance(
+                    msg=f"⚠️ Not allowed to uninstall excluded node: {node_name}",
+                    style="warning",
+                )
                 return False
             if not self.is_node_exists(config):
-                self.progress.advance(msg=f"ℹ️ {node_name} not found. Skipped.", style="info")
+                self.progress.advance(
+                    msg=f"ℹ️ {node_name} not found. Skipped.", style="info"
+                )
                 return True
             self.progress.advance(msg=f"🗑️ Uninstalling node: {node_name}", style="info")
             # if nodes source from registry, try to use cm-cli process uninstalling first
             if node_source == "registry":
-                exec_command([sys.executable, COMFYUI_MN_CLI, "uninstall", node_name], check=True)
+                exec_command(
+                    [sys.executable, COMFYUI_MN_CLI, "uninstall", node_name], check=True
+                )
             # check again if node exists
             possible_path = self.comfyui_path / "custom_nodes" / node_name
             if possible_path.exists():
@@ -469,7 +520,9 @@ class NodeManager:
             logger.error(f"❌ Failed to uninstall node {node_name}: {str(e)}")
             return False
 
-    def init_nodes(self, current_config: list[dict], prev_config: list[dict] = None) -> bool:
+    def init_nodes(
+        self, current_config: list[dict], prev_config: list[dict] = None
+    ) -> bool:
         if not current_config:
             logger.info("📦 No nodes in config")
             return False
@@ -479,7 +532,9 @@ class NodeManager:
             uninstall_nodes = []
         else:
             install_nodes = [node for node in current_config if node not in prev_config]
-            uninstall_nodes = [node for node in prev_config if node not in current_config]
+            uninstall_nodes = [
+                node for node in prev_config if node not in current_config
+            ]
 
         if not install_nodes and not uninstall_nodes:
             logger.info("ℹ️ No changes in nodes")
@@ -511,28 +566,27 @@ class ModelManager:
         self.progress = BootProgress()
         self.failed_list = []
         self.aria2 = aria2p.API(
-            aria2p.Client(
-                host="http://localhost",
-                port=6800,
-                secret=""
-            )
+            aria2p.Client(host="http://localhost", port=6800, secret="")
         )
         self._start_aria2c()
 
     def _start_aria2c(self):
         logger.info("🚀 Starting aria2c...")
         try:
-            subprocess.run([
-                "aria2c",
-                "--daemon=true",
-                "--enable-rpc",
-                "--rpc-listen-port=6800",
-                "--max-concurrent-downloads=1",
-                "--max-connection-per-server=16",
-                "--split=16",
-                "--continue=true",
-                "--disable-ipv6=true",
-            ], check=True)
+            subprocess.run(
+                [
+                    "aria2c",
+                    "--daemon=true",
+                    "--enable-rpc",
+                    "--rpc-listen-port=6800",
+                    "--max-concurrent-downloads=1",
+                    "--max-connection-per-server=16",
+                    "--split=16",
+                    "--continue=true",
+                    "--disable-ipv6=true",
+                ],
+                check=True,
+            )
             # sleep a while to ensure aria2c is ready
             time.sleep(2)
 
@@ -553,23 +607,28 @@ class ModelManager:
             self.aria2.purge()
 
             # set os env COMFYUI_MANAGER_ARIA2_SERVER and COMFYUI_MANAGER_ARIA2_SECRET
-            os.environ['COMFYUI_MANAGER_ARIA2_SERVER'] = "http://localhost:6800/jsonrpc"
-            os.environ['COMFYUI_MANAGER_ARIA2_SECRET'] = ""
+            os.environ["COMFYUI_MANAGER_ARIA2_SERVER"] = "http://localhost:6800/jsonrpc"
+            os.environ["COMFYUI_MANAGER_ARIA2_SECRET"] = ""
         except Exception as e:
             logger.error(f"❌ Failed to start aria2c: {str(e)}")
 
     def _is_huggingface_url(self, url: str) -> bool:
         parsed_url = urllib.parse.urlparse(url)
-        return parsed_url.netloc in ["hf.co", "huggingface.co", "huggingface.com", "hf-mirror.com"]
+        return parsed_url.netloc in [
+            "hf.co",
+            "huggingface.co",
+            "huggingface.com",
+            "hf-mirror.com",
+        ]
 
     def _is_civitai_url(self, url: str) -> bool:
         parsed_url = urllib.parse.urlparse(url)
         return parsed_url.netloc in ["civitai.com", "civitai.work"]
 
     def is_model_exists(self, config: dict) -> bool:
-        model_path = Path(config['path'])
+        model_path = Path(config["path"])
         model_dir = model_path.parent
-        model_filename = config['filename']
+        model_filename = config["filename"]
 
         # remove huggingface cache
         if (model_dir / ".cache").exists():
@@ -580,7 +639,9 @@ class ModelManager:
         previous_download_cache = model_dir / (model_filename + ".aria2")
         previous_download_exists = previous_download_cache.exists()
         if previous_download_exists:
-            logger.warning(f"⚠️ Found previous download cache: {str(previous_download_cache)}, removing...")
+            logger.warning(
+                f"⚠️ Found previous download cache: {str(previous_download_cache)}, removing..."
+            )
             previous_download_cache.unlink()
 
         if model_path.exists():
@@ -596,18 +657,23 @@ class ModelManager:
         return False
 
     def download_model(self, config: dict) -> bool:
-        model_url = config['url']
-        model_dir = config['dir']
-        model_filename = config['filename']
+        model_url = config["url"]
+        model_dir = config["dir"]
+        model_filename = config["filename"]
 
         if self.is_model_exists(config):
-            self.progress.advance(msg=f"ℹ️ {model_filename} already exists in {model_dir}. Skipped.", style="info")
+            self.progress.advance(
+                msg=f"ℹ️ {model_filename} already exists in {model_dir}. Skipped.",
+                style="info",
+            )
             return True
 
-        self.progress.advance(msg=f"⬇️ Downloading: {model_filename} -> {model_dir}", style="info")
+        self.progress.advance(
+            msg=f"⬇️ Downloading: {model_filename} -> {model_dir}", style="info"
+        )
         download_options = defaultdict(str)
-        download_options['dir'] = str(self.comfyui_path / model_dir)
-        download_options['out'] = model_filename
+        download_options["dir"] = str(self.comfyui_path / model_dir)
+        download_options["out"] = model_filename
 
         for attempt in range(1, 4):
             try:
@@ -619,28 +685,52 @@ class ModelManager:
                         raise Exception(f"{download.error_message}")
                     if download.status == "removed":
                         raise Exception("Download was removed")
-                    self.progress.print(f"{model_filename}: {download.progress_string()} | {download.completed_length_string()}/{download.total_length_string()} [{download.eta_string()}, {download.download_speed_string()}]", "info")
+                    self.progress.print(
+                        f"{model_filename}: {download.progress_string()} | {download.completed_length_string()}/{download.total_length_string()} [{download.eta_string()}, {download.download_speed_string()}]",
+                        "info",
+                    )
                     time.sleep(1)
                 logger.info(f"✅ Downloaded: {model_filename} -> {model_dir}")
                 return True
             except Exception as e:
                 e_msg = str(e)
-                self.progress.print(f"⚠️ Download attempt {attempt} failed: {e_msg}", "warning")
+                self.progress.print(
+                    f"⚠️ Download attempt {attempt} failed: {e_msg}", "warning"
+                )
                 # if HTTP authorization failed, try to add authorization info
                 if "authorization failed" in e_msg.lower():
                     # hugingface: auth header
-                    if attempt == 1 and self._is_huggingface_url(model_url) and HF_API_TOKEN:
-                        download_options['header'] = f"Authorization: Bearer {HF_API_TOKEN}"
-                        self.progress.print("🔑 Retrying with provided HF_API_TOKEN", "info")
+                    if (
+                        attempt == 1
+                        and self._is_huggingface_url(model_url)
+                        and HF_API_TOKEN
+                    ):
+                        download_options["header"] = (
+                            f"Authorization: Bearer {HF_API_TOKEN}"
+                        )
+                        self.progress.print(
+                            "🔑 Retrying with provided HF_API_TOKEN", "info"
+                        )
                     # civitai: query token
-                    elif attempt == 1 and self._is_civitai_url(model_url) and CIVITAI_API_TOKEN:
+                    elif (
+                        attempt == 1
+                        and self._is_civitai_url(model_url)
+                        and CIVITAI_API_TOKEN
+                    ):
                         parts = urllib.parse.urlsplit(model_url)
                         query = dict(urllib.parse.parse_qsl(parts.query))
-                        query['token'] = CIVITAI_API_TOKEN
-                        model_url = parts._replace(query=urllib.parse.urlencode(query)).geturl()
-                        self.progress.print("🔑 Retrying with provided CIVITAI_API_TOKEN", "info")
+                        query["token"] = CIVITAI_API_TOKEN
+                        model_url = parts._replace(
+                            query=urllib.parse.urlencode(query)
+                        ).geturl()
+                        self.progress.print(
+                            "🔑 Retrying with provided CIVITAI_API_TOKEN", "info"
+                        )
                     else:
-                        self.progress.print(f"❌ Authorization failed for {model_url}. Skipped.", "error")
+                        self.progress.print(
+                            f"❌ Authorization failed for {model_url}. Skipped.",
+                            "error",
+                        )
                         return False
 
         logger.error(f"❌ Exceeded max retries: {model_filename} -> {model_dir}")
@@ -657,12 +747,17 @@ class ModelManager:
 
     def remove_model(self, config: dict) -> bool:
         try:
-            model_path = Path(config['path'])
-            model_filename = config['filename']
+            model_path = Path(config["path"])
+            model_filename = config["filename"]
             if not self.is_model_exists(config):
-                self.progress.advance(msg=f"ℹ️ {model_filename} not found in path: {model_path}. Skipped.", style="info")
+                self.progress.advance(
+                    msg=f"ℹ️ {model_filename} not found in path: {model_path}. Skipped.",
+                    style="info",
+                )
                 return True
-            self.progress.advance(msg=f"🗑️ Removing model: {model_filename}", style="info")
+            self.progress.advance(
+                msg=f"🗑️ Removing model: {model_filename}", style="info"
+            )
             model_path.unlink()
             logger.info(f"✅ Removed model: {model_filename}")
             return True
@@ -685,13 +780,17 @@ class ModelManager:
                 if model not in prev_config:
                     models_to_download.append(model)
                 else:
-                    prev_model = next((m for m in prev_config if m['url'] == model['url']), None)
-                    prev_path = Path(prev_model['path'])
-                    current_path = Path(model['path'])
+                    prev_model = next(
+                        (m for m in prev_config if m["url"] == model["url"]), None
+                    )
+                    prev_path = Path(prev_model["path"])
+                    current_path = Path(model["path"])
                     if current_path != prev_path:
                         models_to_move.append({"src": prev_path, "dst": current_path})
             for prev_model in prev_config:
-                if not any(model['url'] == prev_model['url'] for model in current_config):
+                if not any(
+                    model["url"] == prev_model["url"] for model in current_config
+                ):
                     models_to_remove.append(prev_model)
 
         if not models_to_download and not models_to_move and not models_to_remove:
@@ -713,7 +812,7 @@ class ModelManager:
                 logger.info(f"└─ {model['src']} -> {model['dst']}")
             self.progress.start(move_count)
             for model in models_to_move:
-                if not self.move_model(model['src'], model['dst']):
+                if not self.move_model(model["src"], model["dst"]):
                     self.failed_list.append(model)
         if models_to_remove:
             remove_count = len(models_to_remove)
@@ -728,7 +827,13 @@ class ModelManager:
 
 
 class ComfyUIInitializer:
-    def __init__(self, boot_config: Path = None, comfyui_path: Path = None, pre_init_scripts: Path = None, post_init_scripts: Path = None):
+    def __init__(
+        self,
+        boot_config: Path = None,
+        comfyui_path: Path = None,
+        pre_init_scripts: Path = None,
+        post_init_scripts: Path = None,
+    ):
         self.comfyui_path = comfyui_path
         self.pre_scripts_dir = pre_init_scripts
         self.post_scripts_dir = post_init_scripts
@@ -755,7 +860,9 @@ class ComfyUIInitializer:
         progress = BootProgress()
         progress.start(scripts_count)
         for script in scripts:
-            progress.advance(msg=f"🛠️ Executing {dir.name} script: {script.name}", style="info")
+            progress.advance(
+                msg=f"🛠️ Executing {dir.name} script: {script.name}", style="info"
+            )
             exec_script(script)
         return True
 
@@ -779,11 +886,11 @@ class ComfyUIInitializer:
         if self.current_config and INIT_NODE:
             node_manager = NodeManager(self.comfyui_path)
             node_manager.init_nodes(self.current_nodes, self.prev_nodes)
-            failed_config['custom_nodes'] = node_manager.failed_list
+            failed_config["custom_nodes"] = node_manager.failed_list
         if self.current_config and INIT_MODEL:
             model_manager = ModelManager(self.comfyui_path)
             model_manager.init_models(self.current_models, self.prev_models)
-            failed_config['models'] = model_manager.failed_list
+            failed_config["models"] = model_manager.failed_list
         # execute post init scripts
         if self.post_scripts_dir.is_dir():
             logger.info("🛠️ Scanning post-init scripts...")
@@ -793,12 +900,16 @@ class ComfyUIInitializer:
             self.post_scripts_dir.unlink()
 
         # check if any failed config
-        if failed_config['custom_nodes']:
-            logger.error(f"❌ Failed to init {len(failed_config['custom_nodes'])} nodes, will retry on next boot:")
-            for node in failed_config['custom_nodes']:
+        if failed_config["custom_nodes"]:
+            logger.error(
+                f"❌ Failed to init {len(failed_config['custom_nodes'])} nodes, will retry on next boot:"
+            )
+            for node in failed_config["custom_nodes"]:
                 logger.error(f"└─ {node['name']}")
-        if failed_config['models']:
-            logger.error(f"❌ Failed to init {len(failed_config['models'])} models, will retry on next boot:")
+        if failed_config["models"]:
+            logger.error(
+                f"❌ Failed to init {len(failed_config['models'])} models, will retry on next boot:"
+            )
             for model in failed_config["models"]:
                 logger.error(f"└─ {model['filename']}")
         # cache succeeded config
@@ -806,24 +917,36 @@ class ComfyUIInitializer:
         succeeded_config = defaultdict(list)
         for key, items in self.current_config.items():
             if key == "custom_nodes":
-                succeeded_config[key] = [node for node in items if node not in failed_config['custom_nodes']]
+                succeeded_config[key] = [
+                    node for node in items if node not in failed_config["custom_nodes"]
+                ]
             elif key == "models":
-                succeeded_config[key] = [model for model in items if model not in failed_config["models"]]
+                succeeded_config[key] = [
+                    model for model in items if model not in failed_config["models"]
+                ]
         self.config_loader.write_config_cache(BOOT_CONFIG_PREV_PATH, succeeded_config)
 
         # launch comfyui
         logger.info("🚀 Launching ComfyUI...")
-        launch_args_list = ["--listen", "0.0.0.0,::", "--port", "8188"] + (COMFYUI_EXTRA_ARGS.split() if COMFYUI_EXTRA_ARGS else [])
-        subprocess.run([sys.executable, str(self.comfyui_path / "main.py")] + launch_args_list, check=False)
+        launch_args_list = ["--listen", "0.0.0.0,::", "--port", "8188"] + (
+            COMFYUI_EXTRA_ARGS.split() if COMFYUI_EXTRA_ARGS else []
+        )
+        subprocess.run(
+            [sys.executable, str(self.comfyui_path / "main.py")] + launch_args_list,
+            check=False,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logger.info("Starting boot process")
 
     # Environment variables
-    WORKDIR = Path(os.environ.get('WORKDIR', "/workspace"))
-    COMFYUI_PATH = Path(os.environ.get('COMFYUI_PATH', None)) or WORKDIR / "comfyui"
-    COMFYUI_MN_PATH = Path(os.environ.get('COMFYUI_MN_PATH', None)) or COMFYUI_PATH / "custom_nodes" / "comfyui-manager"
+    WORKDIR = Path(os.environ.get("WORKDIR", "/workspace"))
+    COMFYUI_PATH = Path(os.environ.get("COMFYUI_PATH", None)) or WORKDIR / "comfyui"
+    COMFYUI_MN_PATH = (
+        Path(os.environ.get("COMFYUI_MN_PATH", None))
+        or COMFYUI_PATH / "custom_nodes" / "comfyui-manager"
+    )
     COMFYUI_MN_CLI = str(COMFYUI_MN_PATH / "cm-cli.py")
     BOOT_CONFIG_DIR = WORKDIR / "boot_config"
     BOOT_CONFIG_PREV_PATH = WORKDIR / ".cache" / "boot_config.prev.json"
@@ -832,17 +955,17 @@ if __name__ == '__main__':
     POST_INSTALL_NODE_SCRIPTS = SCRIPTS_DIR / "post-install-node"
     POST_INIT_SCRIPTS = SCRIPTS_DIR / "post-init"
 
-    HF_API_TOKEN = os.environ.get('HF_API_TOKEN', None)
-    CIVITAI_API_TOKEN = os.environ.get('CIVITAI_API_TOKEN', None)
-    COMFYUI_EXTRA_ARGS = os.environ.get('COMFYUI_EXTRA_ARGS', None)
+    HF_API_TOKEN = os.environ.get("HF_API_TOKEN", None)
+    CIVITAI_API_TOKEN = os.environ.get("CIVITAI_API_TOKEN", None)
+    COMFYUI_EXTRA_ARGS = os.environ.get("COMFYUI_EXTRA_ARGS", None)
 
-    BOOT_CONFIG_INCLUDE = os.environ.get('BOOT_CONFIG_INCLUDE', None)
-    BOOT_CONFIG_EXCLUDE = os.environ.get('BOOT_CONFIG_EXCLUDE', None)
-    INIT_NODE = get_bool_env('INIT_NODE', True)
-    UPDATE_NODE = get_bool_env('UPDATE_NODE', False)
+    BOOT_CONFIG_INCLUDE = os.environ.get("BOOT_CONFIG_INCLUDE", None)
+    BOOT_CONFIG_EXCLUDE = os.environ.get("BOOT_CONFIG_EXCLUDE", None)
+    INIT_NODE = get_bool_env("INIT_NODE", True)
+    UPDATE_NODE = get_bool_env("UPDATE_NODE", False)
     INIT_NODE_EXCLUDE = {"comfyui-manager"}
-    INIT_MODEL = get_bool_env('INIT_MODEL', True)
-    CN_NETWORK = get_bool_env('CN_NETWORK', False)
+    INIT_MODEL = get_bool_env("INIT_MODEL", True)
+    CN_NETWORK = get_bool_env("CN_NETWORK", False)
 
     # check if comfyui path exists
     if not COMFYUI_PATH.is_dir():
@@ -853,14 +976,16 @@ if __name__ == '__main__':
     if CN_NETWORK:
         logger.info("🌐 Using CN network optimization")
         # pip source to ustc mirror
-        os.environ['PIP_INDEX_URL'] = 'https://mirrors.ustc.edu.cn/pypi/web/simple'
+        os.environ["PIP_INDEX_URL"] = "https://mirrors.ustc.edu.cn/pypi/web/simple"
         # huggingface endpoint to hf-mirror.com
-        os.environ['HF_ENDPOINT'] = "https://hf-mirror.com"
+        os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
         if HF_API_TOKEN:
             logger.warning("⚠️ HF_API_TOKEN will be sent to hf-mirror.com")
         if CIVITAI_API_TOKEN:
             logger.warning("⚠️ CIVITAIAPI_TOKEN will be sent to civitai.work")
 
-    app = ComfyUIInitializer(BOOT_CONFIG_DIR, COMFYUI_PATH, PRE_INIT_SCRIPTS, POST_INIT_SCRIPTS)
+    app = ComfyUIInitializer(
+        BOOT_CONFIG_DIR, COMFYUI_PATH, PRE_INIT_SCRIPTS, POST_INIT_SCRIPTS
+    )
     logger.info("Initializing ComfyUI...")
     app.run()
