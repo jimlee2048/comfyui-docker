@@ -355,6 +355,15 @@ class NodeManager:
             node_path.unlink()
             return False
 
+    def setup_node(self, node_path:Path) -> bool:
+        try:
+            exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
+            logger.info(f"✅ Successfully initialized node: {node_path.name}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize node {node_path.name}: {str(e)}")
+            return False
+
     def install_node(self, config: dict) -> bool:
         try:
             node_name = config['name']
@@ -372,7 +381,6 @@ class NodeManager:
             if node_source == "registry":
                 node_version = config['version']
                 install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "install", f"{node_name}@{node_version}"], check=True)
-
                 # reference:original cm-cli.py output format
                 # https://github.com/ltdrdata/ComfyUI-Manager/blob/411c0633a3d542ac20ea8cb47c9578f22fb19854/cm-cli.py#L162
                 # check if error msg print exists
@@ -417,8 +425,7 @@ class NodeManager:
                     exec_command(["git", "clone", "-b", node_branch, node_url, str(node_path)], check=True)
                 else:
                     exec_command(["git", "clone", node_url, str(node_path)], check=True)
-                # use cm_cli.py to init node
-                install_result = exec_command([sys.executable, COMFYUI_MN_CLI, "post-install", str(node_path)], check=True)
+                self.setup_node(node_path)
                 self.progress.print(f"✅ Successfully installed node: {node_name}", style="info")
             else:
                 raise Exception(f"Unsupported source: {node_source}")
