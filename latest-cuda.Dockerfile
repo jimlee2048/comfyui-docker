@@ -69,7 +69,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt \
     nvitop
 
-COPY boot.py .
+COPY comfyui-docker-helper .
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
-CMD [ "python", "boot.py" ]
+CMD [ "python", "comfyui-docker-helper/boot.py" ]
