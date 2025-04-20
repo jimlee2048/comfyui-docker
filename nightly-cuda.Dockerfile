@@ -79,13 +79,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
     huggingface_hub
 
-# install boot script requirements
-COPY requirements.txt .
+COPY comfyui-docker-helper .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt \
     nvitop
 
-COPY boot.py .
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
 CMD [ "python3", "boot.py" ]
