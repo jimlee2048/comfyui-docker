@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
-import urllib.parse
+from urllib.parse import urlparse
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,6 +27,10 @@ from constants import (
     COMFYUI_MN_CLI,
     COMFYUI_PATH,
     HF_API_TOKEN,
+    HF_ENDPOINT,
+    HF_ENDPOINT_NETLOC,
+    CIVITAI_ENDPOINT,
+    CIVITAI_ENDPOINT_NETLOC,
 )
 from models import ModelManager
 from nodes import NodeManager
@@ -77,13 +81,16 @@ class BootConfigManager:
         return unique_items, duplicate_items
 
     def _preprocess_url(self, url: str) -> str:
-        parsed_url = urllib.parse.urlparse(url)
+        parsed_url = urlparse(url)
         # check if url is valid
         if not parsed_url.netloc:
             raise Exception(f"Invalid URL: {url}")
         # chinese mainland network settings
         if CN_NETWORK:
-            fr_map = {"huggingface.co": "hf-mirror.com", "civitai.com": "civitai.work"}
+            fr_map = {
+                "huggingface.co": HF_ENDPOINT_NETLOC,
+                "civitai.com": CIVITAI_ENDPOINT_NETLOC,
+            }
             if parsed_url.netloc in fr_map:
                 url = parsed_url._replace(netloc=fr_map[parsed_url.netloc]).geturl()
         return url
@@ -343,15 +350,17 @@ if __name__ == "__main__":
 
     # chinese mainland network settings
     if CN_NETWORK:
-        logger.info("🌐 Using CN network optimization")
+        logger.info("🌐 Applying CN network optimization")
         # pip source to ustc mirror
         os.environ["PIP_INDEX_URL"] = "https://mirrors.ustc.edu.cn/pypi/web/simple"
-        # huggingface endpoint to hf-mirror.com
-        os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-        if HF_API_TOKEN:
-            logger.warning("⚠️ HF_API_TOKEN will be sent to hf-mirror.com")
-        if CIVITAI_API_TOKEN:
-            logger.warning("⚠️ CIVITAI_API_TOKEN will be sent to civitai.work")
+    if HF_API_TOKEN and HF_ENDPOINT_NETLOC.lower() not in ("huggingface.co"):
+        logger.warning(
+            f"⚠️ HF_API_TOKEN will be sent to a third party endpoint: {HF_ENDPOINT}"
+        )
+    if CIVITAI_API_TOKEN and CIVITAI_ENDPOINT_NETLOC.lower() not in ("civitai.com"):
+        logger.warning(
+            f"⚠️ CIVITAI_API_TOKEN will be sent to a third party endpoint: {CIVITAI_ENDPOINT}"
+        )
 
     app = ComfyUIInitializer(
         BOOT_CONFIG_DIR, COMFYUI_PATH, BOOT_PRE_INIT_SCRIPTS, BOOT_POST_INIT_SCRIPTS

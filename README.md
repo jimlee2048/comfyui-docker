@@ -29,18 +29,19 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 | `latest` / `vX.Y.Z` | [![PyTorch](https://img.shields.io/badge/PyTorch-2.6.0--cuda12.6--cudnn9--runtime-EE4C2C?logo=pytorch)](https://hub.docker.com/r/pytorch/pytorch/) | [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Release](https://img.shields.io/github/v/release/comfyanonymous/ComfyUI?label=release&logo=github)](https://github.com/comfyanonymous/ComfyUI/releases/latest) |
 
 ## Environment Variables
-| Variable            | Description                                                                                                                                                       | Default |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| HF_API_TOKEN        | [Hugging Face access token](https://huggingface.co/settings/tokens) for downloading access restricted models.                                                     |         |
-| CIVITAI_API_TOKEN   | [Civitai API token](https://education.civitai.com/civitais-guide-to-downloading-via-api/#how-do-i-download-via-the-api) for downloading access restricted models. |         |
-| CN_NETWORK          | Enable network optimization for Chinese Mainland users.                                                                                                           | false   |
-| INIT_NODE           | Enable automatic installs/removes of custom nodes at startup                                                                                                      | true    |
-| UPDATE_NODE         | Enable automatic updates of custom nodes at startup                                                                                                               | false   |
-| INIT_MODEL          | Enable automatic downloads/removes of models at startup                                                                                                           | true    |
-| BOOT_CONFIG_INCLUDE | Regex pattern for including boot config files.                                                                                                                    |         |
-| BOOT_CONFIG_EXCLUDE | Regex pattern for excluding boot config files.                                                                                                                    |         |
-| COMFYUI_EXTRA_ARGS  | Additional ComfyUI launch arguments.                                                                                                                              |         |
-
+| Variable            | Description                                                                                                                                                       | Default                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| INIT_NODE           | Enable automatic installs/removes of custom nodes at startup                                                                                                      | true                                                                       |
+| UPDATE_NODE         | Enable automatic updates of custom nodes at startup                                                                                                               | false                                                                      |
+| INIT_MODEL          | Enable automatic downloads/removes of models at startup                                                                                                           | true                                                                       |
+| BOOT_CONFIG_INCLUDE | Regex pattern for including boot config files.                                                                                                                    |                                                                            |
+| BOOT_CONFIG_EXCLUDE | Regex pattern for excluding boot config files.                                                                                                                    |                                                                            |
+| COMFYUI_EXTRA_ARGS  | Additional ComfyUI launch arguments.                                                                                                                              |                                                                            |
+| HF_API_TOKEN        | [Hugging Face access token](https://huggingface.co/settings/tokens) for downloading access restricted models.                                                     |                                                                            |
+| CIVITAI_API_TOKEN   | [Civitai API token](https://education.civitai.com/civitais-guide-to-downloading-via-api/#how-do-i-download-via-the-api) for downloading access restricted models. |                                                                            |
+| CN_NETWORK          | Enable network optimization for Chinese Mainland users. Changes default HF/Civitai endpoints.                                                                     | false                                                                      |
+| HF_ENDPOINT         | Override the Hugging Face download endpoint.                                                                                                                      | `https://huggingface.co` (or `https://hf-mirror.com` if CN_NETWORK=`true`) |
+| CIVITAI_ENDPOINT    | Override the Civitai download endpoint.                                                                                                                           | `https://civitai.com` (or `https://civitai.work` if CN_NETWORK=`true`)     |
 
 ## Quick Start
 1. Clone this repository:

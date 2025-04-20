@@ -1,5 +1,6 @@
 import os 
 from pathlib import Path
+from urllib.parse import urlparse
 
 def get_bool_env(var_name: str, default: bool = False) -> bool:
     value = os.environ.get(var_name)
@@ -37,6 +38,19 @@ BOOT_INIT_NODE = get_bool_env("INIT_NODE", True)
 BOOT_INIT_NODE_EXCLUDE = {"comfyui-manager"}
 BOOT_INIT_MODEL = get_bool_env("INIT_MODEL", True)
 
-CN_NETWORK = get_bool_env("CN_NETWORK", False)
 HF_API_TOKEN = os.environ.get("HF_API_TOKEN", None)
 CIVITAI_API_TOKEN = os.environ.get("CIVITAI_API_TOKEN", None)
+
+CN_NETWORK = get_bool_env("CN_NETWORK", False)
+if CN_NETWORK:
+    # Use mirror sites for Hugging Face and Civitai when CN_NETWORK is true
+    HF_ENDPOINT_DEFAULT = "https://hf-mirror.com"
+    CIVITAI_ENDPOINT_DEFAULT = "https://civitai.work"
+else:
+    # Use official sites otherwise
+    HF_ENDPOINT_DEFAULT = "https://huggingface.co"
+    CIVITAI_ENDPOIN_DEFAULT = "https://civitai.com"
+HF_ENDPOINT = os.environ.get("HF_ENDPOINT", HF_ENDPOINT_DEFAULT)
+CIVITAI_ENDPOINT = os.environ.get("CIVITAI_ENDPOINT", CIVITAI_ENDPOINT_DEFAULT)
+HF_ENDPOINT_NETLOC = urlparse(HF_ENDPOINT).netloc
+CIVITAI_ENDPOINT_NETLOC = urlparse(CIVITAI_ENDPOINT).netloc
