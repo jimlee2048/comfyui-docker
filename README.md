@@ -60,6 +60,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
     - Enable in `.env`:
       ```env
       INIT_NODE=true
+      
       INIT_MODEL=true
       ```
     - Create your boot config in `config/`:
