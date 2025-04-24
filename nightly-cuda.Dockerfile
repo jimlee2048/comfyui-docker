@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install xformers
 # not built for sm90, it make >=sm100 also use unsupported flashattention3
-ARG MAX_JOBS=4
+ARG MAX_JOBS=2
 ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;12.0"
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -v -U git+https://github.com/facebookresearch/xformers.git

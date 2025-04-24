@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-runtime
+FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-devel
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -15,6 +15,13 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# pip config
+# let .pyc files be stored in one place
+ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
+# suppress [WARNING: Running pip as the 'root' user]
+ENV PIP_ROOT_USER_ACTION=ignore
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu128"
+
 # install comfyui - method 1: manually clone
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/Comfy-Org/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
@@ -29,24 +36,28 @@ RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
 ARG COMFYUI_MN_VERSION=main
 RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 
-# pip config
-# let .pyc files be stored in one place
-ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
-# suppress [WARNING: Running pip as the 'root' user]
-ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu126"
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     -r ${COMFYUI_PATH}/requirements.txt \
-    -r ${COMFYUI_MN_PATH}/requirements.txt \
-    xformers triton
+    -r ${COMFYUI_MN_PATH}/requirements.txt
 
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install \
-#     triton \
-#     sageattention@git+https://github.com/thu-ml/SageAttention
+# install triton
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install triton  
+
+# install xformers
+# not built for sm90, it make >=sm100 also use unsupported flashattention3
+ARG MAX_JOBS=2
+ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;12.0"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -v -U git+https://github.com/facebookresearch/xformers.git
+
+# install sageattention2
+ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -v -U git+https://github.com/jimlee2048/SageAttention.git
 
 # isolate critical python packages
 ENV PIP_USER=true
@@ -70,4 +81,4 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
-CMD [ "python", "comfyui-docker-helper/boot.py" ]
+CMD [ "python", "boot.py" ]

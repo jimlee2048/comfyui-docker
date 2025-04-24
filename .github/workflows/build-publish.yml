@@ -74,6 +74,7 @@ jobs:
         uses: easimon/maximize-build-space@master
         with:
           overprovision-lvm: "true"
+          swap-size-mb: 8192
           remove-android: "true"
           remove-dotnet: "true"
           build-mount-path: "/var/lib/docker/"
@@ -131,6 +132,7 @@ jobs:
         uses: easimon/maximize-build-space@master
         with:
           overprovision-lvm: "true"
+          swap-size-mb: 8192
           remove-android: "true"
           remove-dotnet: "true"
           build-mount-path: "/var/lib/docker/"
