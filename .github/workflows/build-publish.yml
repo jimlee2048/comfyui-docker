@@ -16,7 +16,7 @@ on:
     paths:
       - "latest-cuda.Dockerfile"
       - "nightly-cuda.Dockerfile"
-      - "boot.py"
+      - "comfyui-docker-helper/**"
 
 jobs:
   fetch-upstream:
