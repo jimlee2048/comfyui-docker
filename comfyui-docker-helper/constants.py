@@ -1,6 +1,7 @@
-import os 
+import os
 from pathlib import Path
 from urllib.parse import urlparse
+
 
 def get_bool_env(var_name: str, default: bool = False) -> bool:
     value = os.environ.get(var_name)
@@ -14,6 +15,7 @@ def get_bool_env(var_name: str, default: bool = False) -> bool:
     else:
         # raise ValueError(f"Invalid bool value for environment variable '{var_name}': '{value}'")
         return default
+
 
 WORKDIR = Path(os.environ.get("WORKDIR", "/workspace"))
 COMFYUI_PATH = Path(os.environ.get("COMFYUI_PATH", None)) or WORKDIR / "comfyui"
@@ -49,7 +51,7 @@ if CN_NETWORK:
 else:
     # Use official sites otherwise
     HF_ENDPOINT_DEFAULT = "https://huggingface.co"
-    CIVITAI_ENDPOIN_DEFAULT = "https://civitai.com"
+    CIVITAI_ENDPOINT_DEFAULT = "https://civitai.com"
 HF_ENDPOINT = os.environ.get("HF_ENDPOINT", HF_ENDPOINT_DEFAULT)
 CIVITAI_ENDPOINT = os.environ.get("CIVITAI_ENDPOINT", CIVITAI_ENDPOINT_DEFAULT)
 HF_ENDPOINT_NETLOC = urlparse(HF_ENDPOINT).netloc
