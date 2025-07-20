@@ -14,8 +14,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "latest-cuda.Dockerfile"
-      - "nightly-cuda.Dockerfile"
+      - "Dockerfile.*"
       - "comfyui-docker-helper/**"
 
 jobs:
@@ -110,7 +109,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: latest-cuda.Dockerfile
+          file: Dockerfile.cuda
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -167,7 +166,64 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: nightly-cuda.Dockerfile
+          file: Dockerfile.cuda
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            COMFYUI_VERSION=master
+
+  build-experimental-cuda:
+    needs: fetch-upstream
+    runs-on: ubuntu-latest
+    if: needs.fetch-upstream.outputs.is_new_nightly == 'true'
+    steps:
+      - name: Backup /var/lib/docker/*
+        run: sudo mv /var/lib/docker/ "${GITHUB_WORKSPACE}/temp-docker"
+
+      - name: Maximize build disk space
+        uses: easimon/maximize-build-space@master
+        with:
+          overprovision-lvm: "true"
+          swap-size-mb: 8192
+          remove-android: "true"
+          remove-dotnet: "true"
+          build-mount-path: "/var/lib/docker/"
+
+      - name: Restore /var/lib/docker/*
+        run: sudo sh -c "mv ${GITHUB_WORKSPACE}/temp-docker/* /var/lib/docker"
+
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Docker image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.DOCKER_USERNAME }}/comfyui-docker
+          tags: |
+            type=raw,value=experimental,enable={{is_default_branch}}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.cuda.experimental
           platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}

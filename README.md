@@ -10,7 +10,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 ⚠️ **Note**: This image is designed for personal use with GUI access, not for production server deployments.
 
 ## Features
-- Ready-to-use Python environment with common ML packages: `sageattention`, `xformers`, `transformers`, `onnxruntime`, `opencv-python`, etc.
+- Ready-to-use Python environment with common ML packages: `nunchaku`,  `sageattention`, `xformers`, `transformers`, `onnxruntime`, `opencv-python`, etc.
   - See [Dockerfile](Dockerfile) for complete details
 - Automated management of custom nodes & models:
   - Configuration-driven setup during startup
@@ -23,10 +23,11 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 
 ## Available Image Tags
 
-| Image Tag           | Compute Platform                                                                                            | PyTorch Version                                                                                      | Python Version                                                                                    | ComfyUI Version                                                                                                                                                           |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nightly`           | [![CUDA](https://img.shields.io/badge/CUDA-12.8-76B900?logo=nvidia)](https://hub.docker.com/r/nvidia/cuda/) | [![PyTorch](https://img.shields.io/badge/PyTorch-Nightly-EE4C2C?logo=pytorch)](https://pytorch.org/) | [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Nightly](https://img.shields.io/github/last-commit/comfyanonymous/ComfyUI?label=nightly&logo=github)](https://github.com/comfyanonymous/ComfyUI/tree/master)   |
-| `latest` / `vX.Y.Z` | [![CUDA](https://img.shields.io/badge/CUDA-12.8-76B900?logo=nvidia)](https://hub.docker.com/r/nvidia/cuda/) | [![PyTorch](https://img.shields.io/badge/PyTorch-2.6.0-EE4C2C?logo=pytorch)](https://pytorch.org/)   | [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Release](https://img.shields.io/github/v/release/comfyanonymous/ComfyUI?label=release&logo=github)](https://github.com/comfyanonymous/ComfyUI/releases/latest) |
+| Image Tag           | Compute Platform                                                                                            | PyTorch Version                                                                                      | Python Version                                                                                    | ComfyUI Version                                                                                                                                                           | Note                   |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `latest` / `vX.Y.Z` | [![CUDA](https://img.shields.io/badge/CUDA-12.8-76B900?logo=nvidia)](https://hub.docker.com/r/nvidia/cuda/) | [![PyTorch](https://img.shields.io/badge/PyTorch-2.7.1-EE4C2C?logo=pytorch)](https://pytorch.org/)   | [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Release](https://img.shields.io/github/v/release/comfyanonymous/ComfyUI?label=release&logo=github)](https://github.com/comfyanonymous/ComfyUI/releases/latest) | Recommend              |
+| `nightly`           | [![CUDA](https://img.shields.io/badge/CUDA-12.8-76B900?logo=nvidia)](https://hub.docker.com/r/nvidia/cuda/) | [![PyTorch](https://img.shields.io/badge/PyTorch-2.7.1-EE4C2C?logo=pytorch)](https://pytorch.org/)   | [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Nightly](https://img.shields.io/github/last-commit/comfyanonymous/ComfyUI?label=nightly&logo=github)](https://github.com/comfyanonymous/ComfyUI/tree/master)   |                        |
+| `experimental`      | [![CUDA](https://img.shields.io/badge/CUDA-12.9-76B900?logo=nvidia)](https://hub.docker.com/r/nvidia/cuda/) | [![PyTorch](https://img.shields.io/badge/PyTorch-Nightly-EE4C2C?logo=pytorch)](https://pytorch.org/) | [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python)](https://www.python.org/) | [![ComfyUI Nightly](https://img.shields.io/github/last-commit/comfyanonymous/ComfyUI?label=nightly&logo=github)](https://github.com/comfyanonymous/ComfyUI/tree/master)   | No `nunchaku` built-in |
 
 ## Environment Variables
 | Variable            | Description                                                                                                                                                       | Default                                                                    |
@@ -63,9 +64,9 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
       
       INIT_MODEL=true
       ```
-    - Create your boot config in `config/`:
+    - Create your boot config in `config/`
         - Start with `config/example.toml`
-        - Or, reference my [personal config](https://github.com/jimlee2048/config-aigc-playground/tree/main/comfyui/config)
+        - See my [personal config](https://github.com/jimlee2048/config-aigc-playground/tree/main/comfyui/config) for reference
 
 4. Review and adjust `docker-compose.yml` as needed:
     - Choose ComfyUI version via image tag

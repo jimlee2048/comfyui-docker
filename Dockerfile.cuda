@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.7.0-cuda12.8-cudnn9-devel
+FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-devel
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -50,6 +50,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install xformers
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install xformers --index-url https://download.pytorch.org/whl/cu128
+
+# install nunchaku
+RUN --mount=type=cache,target=/root/.cache/pip \
+    NUNCHAKU_LATEST_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.7-cp311-cp311-linux_x86_64.whl"
 
 # install sageattention2
 ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"

@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -21,7 +21,7 @@ ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 ENV PIP_ROOT_USER_ACTION=ignore
 # bypass PEP 668
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu129"
 
 # install comfyui - method 1: manually clone
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
