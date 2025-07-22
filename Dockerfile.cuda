@@ -1,5 +1,5 @@
 # https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-devel
+FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -57,9 +57,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.7-cp311-cp311-linux_x86_64.whl"
 
 # install sageattention2
-# ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install -v -U git+https://github.com/jimlee2048/SageAttention.git
+RUN --mount=type=cache,target=/root/.cache/pip \
+    SAGEATTENTION_LATEST_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu128torch2.7-cp311-cp311-linux_x86_64.whl"
 
 # isolate critical python packages
 ENV PIP_USER=true
