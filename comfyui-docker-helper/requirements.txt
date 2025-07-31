@@ -1,5 +1,0 @@
-aria2p
-GitPython
-giturlparse
-rich
-wget

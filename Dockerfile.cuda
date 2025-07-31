@@ -61,11 +61,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     SAGEATTENTION_LATEST_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
     && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu128torch2.7-cp311-cp311-linux_x86_64.whl"
 
-# isolate critical python packages
-ENV PIP_USER=true
-ENV PATH="${PATH}:/root/.local/bin"
-
-# install extra pip packages for comfyui, if you don't mind image size
+# install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     "numpy<2" \
@@ -74,13 +70,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     transformers diffusers accelerate \
     # i hate this stupid solution to avoid possible conflict :(
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
-    huggingface_hub
-
-COPY comfyui-docker-helper .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt \
+    huggingface_hub \
     nvitop
+
+# install helper package
+COPY comfyui_helper comfyui_helper/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -e comfyui_helper/
 
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
-CMD [ "python", "boot.py" ]
+CMD [ "comfyui-boot" ]

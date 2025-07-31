@@ -50,25 +50,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install triton
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --pre triton  
-
+    pip install --pre triton
 # install xformers
-# not built for sm90, it make >=sm100 also use unsupported flashattention3
-ARG MAX_JOBS=2
-ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;12.0"
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -v -U git+https://github.com/facebookresearch/xformers.git
-
+    pip install --pre xformers
 # install sageattention2
 # ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
 # RUN --mount=type=cache,target=/root/.cache/pip \
 #     pip install -v -U git+https://github.com/jimlee2048/SageAttention.git
 
-# isolate critical python packages
-ENV PIP_USER=true
-ENV PATH="${PATH}:/root/.local/bin"
-
-# install extra pip packages for comfyui, if you don't mind image size
+# install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
     "numpy<2" \
@@ -77,13 +68,14 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     transformers diffusers accelerate \
     # i hate this stupid solution to avoid possible conflict :(
     opencv-python opencv-python-headless opencv-contrib-python opencv-contrib-python-headless \
-    huggingface_hub
-
-COPY comfyui-docker-helper .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -r requirements.txt \
+    huggingface_hub \
     nvitop
+
+# install helper package
+COPY comfyui_helper comfyui_helper/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -e comfyui_helper/
 
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
-CMD [ "python3", "boot.py" ]
+CMD [ "comfyui-boot" ]

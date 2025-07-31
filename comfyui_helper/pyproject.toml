@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comfyui-helper"
+version = "1.0.0"
+description = "Helper utilities for ComfyUI Docker deployment"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["aria2p", "GitPython", "giturlparse"]
+
+[project.scripts]
+comfyui-boot = "comfyui_helper.boot:main"
+
+[tool.setuptools]
+packages = ["comfyui_helper"]
+package-dir = { "comfyui_helper" = "." }
+
+[tool.setuptools.package-data]
+comfyui_helper = ["*.toml", "*.yaml", "*.yml"]
