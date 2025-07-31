@@ -66,8 +66,8 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_latest == 'true'
     steps:
-      # - name: Backup /var/lib/docker/*
-      #   run: sudo mv /var/lib/docker/ "${GITHUB_WORKSPACE}/temp-docker"
+      - name: Backup /var/lib/docker/*
+        run: sudo mv /var/lib/docker/ "${GITHUB_WORKSPACE}/temp-docker"
 
       - name: Maximize build disk space
         uses: easimon/maximize-build-space@master
@@ -78,8 +78,8 @@ jobs:
           remove-dotnet: "true"
           build-mount-path: "/var/lib/docker/"
 
-      # - name: Restore /var/lib/docker/*
-      #   run: sudo sh -c "mv ${GITHUB_WORKSPACE}/temp-docker/* /var/lib/docker"
+      - name: Restore /var/lib/docker/*
+        run: sudo sh -c "mv ${GITHUB_WORKSPACE}/temp-docker/* /var/lib/docker"
 
       - name: Git checkout
         uses: actions/checkout@v4
@@ -124,8 +124,8 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.fetch-upstream.outputs.is_new_nightly == 'true'
     steps:
-      # - name: Backup /var/lib/docker/*
-      #   run: sudo mv /var/lib/docker/ "${GITHUB_WORKSPACE}/temp-docker"
+      - name: Backup /var/lib/docker/*
+        run: sudo mv /var/lib/docker/ "${GITHUB_WORKSPACE}/temp-docker"
 
       - name: Maximize build disk space
         uses: easimon/maximize-build-space@master
@@ -136,8 +136,8 @@ jobs:
           remove-dotnet: "true"
           build-mount-path: "/var/lib/docker/"
 
-      # - name: Restore /var/lib/docker/*
-      #   run: sudo sh -c "mv ${GITHUB_WORKSPACE}/temp-docker/* /var/lib/docker"
+      - name: Restore /var/lib/docker/*
+        run: sudo sh -c "mv ${GITHUB_WORKSPACE}/temp-docker/* /var/lib/docker"
 
       - name: Git checkout
         uses: actions/checkout@v4
