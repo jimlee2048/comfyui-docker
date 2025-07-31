@@ -16,6 +16,7 @@ on:
     paths:
       - "Dockerfile.*"
       - "comfyui_helper/**"
+      - ".github/workflows/build-publish.yml"
 
 jobs:
   fetch-upstream:
