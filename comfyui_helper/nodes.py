@@ -202,9 +202,9 @@ class Node:
 
 
 class NodesManager:
-    def __init__(self, current_config: list[dict], prev_config: list[dict] = None):
+    def __init__(self, current_config: list[dict], prev_state: list[dict] = None):
         self.current_config = self._load_config(current_config)
-        self.prev_config = self._load_config(prev_config) if prev_config else []
+        self.prev_state = self._load_config(prev_state) if prev_state else []
 
     def _node_factory(self, config: dict) -> Node:
         # source: registry
@@ -260,14 +260,14 @@ class NodesManager:
         install_queue = []
         remove_queue = []
 
-        if self.prev_config:
+        if self.prev_state:
             setup_exists = False
-            # compare with previous config
+            # compare with previous state
             install_queue = [
-                node for node in self.current_config if node not in self.prev_config
+                node for node in self.current_config if node not in self.prev_state
             ]
             remove_queue = [
-                node for node in self.prev_config if node not in self.current_config
+                node for node in self.prev_state if node not in self.current_config
             ]
         else:
             # maybe upgrade from old image, should ensure all exist nodes are setup

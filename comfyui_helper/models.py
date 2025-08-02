@@ -87,9 +87,9 @@ class Model:
 
 
 class ModelsManager:
-    def __init__(self, current_config: list[dict], prev_config: list[dict] = None):
+    def __init__(self, current_config: list[dict], prev_state: list[dict] = None):
         self.current_config = self._load_config(current_config)
-        self.prev_config = self._load_config(prev_config) if prev_config else []
+        self.prev_state = self._load_config(prev_state) if prev_state else []
         self.downloader = Downloader()
 
     def _model_factory(self, config: dict) -> Model:
@@ -127,8 +127,8 @@ class ModelsManager:
         remove_queue: list[Model] = []
         move_queue: list[dict[Model, Model]] = []
 
-        if self.prev_config:
-            prev_url_to_models = {model.url: model for model in self.prev_config}
+        if self.prev_state:
+            prev_url_to_models = {model.url: model for model in self.prev_state}
             current_url_to_models = {model.url: model for model in self.current_config}
 
             processed_urls = set()
@@ -153,7 +153,7 @@ class ModelsManager:
                     processed_urls.add(current_model.url)
 
             # remove_queue
-            for prev_model in self.prev_config:
+            for prev_model in self.prev_state:
                 if prev_model.url in processed_urls:
                     continue
                 if prev_model.url not in current_url_to_models:

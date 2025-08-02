@@ -12,12 +12,12 @@ class ConfigManager:
     def __init__(
         self,
         config_dir: Path,
-        prev_config_path: Path | None = None,
+        prev_state: Path | None = None,
         include_pattern: str | None = None,
         exclude_pattern: str | None = None,
     ) -> None:
         self.config = self.load_config(config_dir, include_pattern, exclude_pattern)
-        self.prev_config = self.load_prev_config(prev_config_path)
+        self.prev_state = self.load_prev_state(prev_state)
 
     def _sort_by_numeric_prefix(self, file_path: Path) -> tuple:
         filename = file_path.name
@@ -84,35 +84,35 @@ class ConfigManager:
 
         return config
 
-    def load_prev_config(self, path: Path) -> dict:
+    def load_prev_state(self, path: Path) -> dict:
         if path is None:
-            logger.info("ℹ️ No previous config path provided")
+            logger.info("ℹ️ No previous state path provided")
             return {}
 
         if path.is_file():
-            logger.info(f"📂 Loading previous config: {path}")
+            logger.info("📂 Detected previous state, loading...")
             try:
                 return json.loads(path.read_text())
             except Exception as e:
-                logger.error(f"❌ Failed to load previous config '{path}': {str(e)}")
+                logger.error(f"❌ Failed to load previous state '{path}': {str(e)}")
                 return {}
         elif path.is_dir():
-            logger.warning("⚠️ Invalid previous config detected, removing...")
+            logger.warning("⚠️ Invalid previous state detected, removing...")
             try:
                 shutil.rmtree(path)
             except Exception as e:
-                logger.error(f"❌ Failed to remove invalid config directory: {str(e)}")
+                logger.error(f"❌ Failed to remove invalid state: {str(e)}")
             return {}
         else:
-            logger.info("ℹ️ No previous config found")
+            logger.info("ℹ️ No previous state found")
             return {}
 
-    def save_config(self, path: Path, config: dict) -> bool:
+    def save_state(self, path: Path, config: dict) -> bool:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(config, default=self._json_default, indent=4))
-            logger.info(f"✅ Current config saved to {path}")
+            logger.info(f"✅ Current state saved to {path}")
             return True
         except Exception as e:
-            logger.error(f"❌ Failed to save current config: {str(e)}")
+            logger.error(f"❌ Failed to save current state: {str(e)}")
             return False

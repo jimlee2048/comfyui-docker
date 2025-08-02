@@ -8,7 +8,7 @@ from .constants import (
     BOOT_CONFIG_DIR,
     BOOT_CONFIG_EXCLUDE,
     BOOT_CONFIG_INCLUDE,
-    BOOT_CONFIG_PREV_PATH,
+    BOOT_PREV_STATE_PATH,
     BOOT_INIT_MODEL,
     BOOT_INIT_NODE,
     BOOT_POST_INIT_SCRIPTS_DIR,
@@ -39,7 +39,7 @@ class ComfyUILauncher:
         self,
         app_path: Path,
         boot_config: Path,
-        prev_boot_config: Path,
+        prev_state: Path,
         include_config: str = None,
         exclude_config: str = None,
         pre_init_scripts: Path = None,
@@ -53,7 +53,7 @@ class ComfyUILauncher:
     ):
         self.app_path = app_path
         self.boot_config = boot_config
-        self.prev_boot_config = prev_boot_config
+        self.prev_state = prev_state
         self.include_config = include_config
         self.exclude_config = exclude_config
         self.pre_init_scripts = pre_init_scripts
@@ -128,26 +128,26 @@ class ComfyUILauncher:
         # 1. load boot config
         boot_config = ConfigManager(
             config_dir=self.boot_config,
-            prev_config_path=self.prev_boot_config,
+            prev_state=self.prev_state,
             include_pattern=self.include_config,
             exclude_pattern=self.exclude_config,
         )
         current_config = boot_config.config
-        prev_config = boot_config.prev_config
+        prev_state = boot_config.prev_state
         failed_config = {}
 
         # 2. pre-init hook
         self._pre_init_hook()
 
         # 3. if UPDATE_NODE=true, try to update all installed nodes
-        if prev_config and self.update_nodes:
+        if prev_state and self.update_nodes:
             NodesManager.update_all_nodes()
 
         # 4. init nodes
         current_nodes_config = current_config.get("custom_nodes", [])
-        prev_nodes_config = prev_config.get("custom_nodes", [])
+        prev_nodes_state = prev_state.get("custom_nodes", [])
         if self.init_nodes and current_nodes_config:
-            nodes_manager = NodesManager(current_nodes_config, prev_nodes_config)
+            nodes_manager = NodesManager(current_nodes_config, prev_nodes_state)
             result = nodes_manager.init_nodes()
             if result is not None:
                 _, _, failed = result
@@ -156,9 +156,9 @@ class ComfyUILauncher:
 
         # 5. init models
         current_models_config = current_config.get("models", [])
-        prev_models_config = prev_config.get("models", [])
+        prev_models_state = prev_state.get("models", [])
         if self.init_models and current_models_config:
-            models_manager = ModelsManager(current_models_config, prev_models_config)
+            models_manager = ModelsManager(current_models_config, prev_models_state)
             result = models_manager.init_models()
             if result is not None:
                 _, _, _, failed = result
@@ -184,7 +184,7 @@ class ComfyUILauncher:
                 ]
             else:
                 succeeded_config[key] = value
-        boot_config.save_config(path=self.prev_boot_config, config=succeeded_config)
+        boot_config.save_state(path=self.prev_state, config=succeeded_config)
 
         # 9. launch comfyui
         launch_args = ["--listen", self.listen, "--port", str(self.port)]
@@ -216,7 +216,7 @@ def main():
         extra_args=COMFYUI_EXTRA_ARGS,
         app_path=COMFYUI_PATH,
         boot_config=BOOT_CONFIG_DIR,
-        prev_boot_config=BOOT_CONFIG_PREV_PATH,
+        prev_state=BOOT_PREV_STATE_PATH,
         include_config=BOOT_CONFIG_INCLUDE,
         exclude_config=BOOT_CONFIG_EXCLUDE,
         pre_init_scripts=BOOT_PRE_INIT_SCRIPTS_DIR,
