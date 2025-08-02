@@ -175,7 +175,7 @@ class ComfyUILauncher:
                 logger.error(f"❌ Failed {len(value)} {key}:")
                 print_list_tree(value)
 
-        # 8. save succeeded config
+        # 8. save state
         succeeded_config = {}
         for key, value in current_config.items():
             if key in failed_config:
