@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .constants import CIVITAI_API_TOKEN, COMFYUI_PATH, HF_API_TOKEN
+from .download import Downloader
 from .utils import (
-    Downloader,
     Progress,
     is_civitai_url,
     is_huggingface_url,
