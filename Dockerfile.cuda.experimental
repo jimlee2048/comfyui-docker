@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    python3.12-full python3.12-dev python3-pip ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    python3.12-full python3.12-dev python3-pip tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -78,4 +78,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 VOLUME [ "${COMFYUI_PATH}/user", "${COMFYUI_PATH}/output" , "${COMFYUI_PATH}/models", "${COMFYUI_PATH}/custom_nodes"]
 EXPOSE 8188
+# use tini as entrypoint to handle signals properly
+ENTRYPOINT [ "/usr/bin/tini", "--" ]
 CMD [ "comfyui-boot" ]

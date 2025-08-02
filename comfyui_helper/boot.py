@@ -1,4 +1,5 @@
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -63,9 +64,11 @@ class ComfyUILauncher:
         self.listen = listen
         self.port = port
         self.extra_args = extra_args
-        self._check_boot_env()
+        self.comfyui_process = None
+        self._check_env()
+        self._setup_signal_handlers()
 
-    def _check_boot_env(self):
+    def _check_env(self):
         # check if comfyui path exists
         if not self.app_path.is_dir():
             logger.error(f"❌ Invalid ComfyUI path: {self.app_path}")
@@ -85,18 +88,21 @@ class ComfyUILauncher:
                 f"⚠️ CIVITAI_API_TOKEN will be sent to a third party endpoint: {CIVITAI_ENDPOINT}"
             )
 
-    def startup(self):
-        # 0. load boot config
-        boot_config = ConfigManager(
-            config_dir=self.boot_config,
-            prev_config_path=self.prev_boot_config,
-            include_pattern=self.include_config,
-            exclude_pattern=self.exclude_config,
-        )
-        current_config = boot_config.config
-        prev_config = boot_config.prev_config
+    def _setup_signal_handlers(self):
+        def shutdown_handler(_signum, _frame):
+            if self.comfyui_process and self.comfyui_process.poll() is None:
+                logger.info("🛑 Received termination signal, shutting down...")
+                self.comfyui_process.terminate()
+            else:
+                logger.info(
+                    "🛑 Received termination signal, but ComfyUI process is not running."
+                )
 
-        # 1. exec pre-init scripts
+        signal.signal(signal.SIGTERM, shutdown_handler)
+        signal.signal(signal.SIGINT, shutdown_handler)
+
+    def _pre_init_hook(self):
+        # exec pre-init custom scripts
         if self.pre_init_scripts:
             if self.pre_init_scripts.is_dir():
                 logger.info("🛠️ Executing pre-init scripts...")
@@ -105,12 +111,39 @@ class ComfyUILauncher:
                 logger.warning(f"⚠️ {self.pre_init_scripts} invalid, removing...")
                 self.pre_init_scripts.unlink()
 
-        # 2. if UPDATE_NODE=true, try to update all installed nodes
-        if prev_config and self.update_nodes:
-            NodesManager.update_all_nodes()
+    def _post_init_hook(self):
+        # exec post-init custom scripts
+        if self.post_init_scripts:
+            if self.post_init_scripts.is_dir():
+                logger.info("🛠️ Executing post-init custom scripts...")
+                exec_scripts_in_dir(self.post_init_scripts)
+            elif self.post_init_scripts.is_file():
+                logger.warning(f"⚠️ {self.post_init_scripts} invalid, removing...")
+                self.post_init_scripts.unlink()
+
+    def _post_exit_hook(self):
+        pass
+
+    def startup(self):
+        # 1. load boot config
+        boot_config = ConfigManager(
+            config_dir=self.boot_config,
+            prev_config_path=self.prev_boot_config,
+            include_pattern=self.include_config,
+            exclude_pattern=self.exclude_config,
+        )
+        current_config = boot_config.config
+        prev_config = boot_config.prev_config
         failed_config = {}
 
-        # 3. init nodes
+        # 2. pre-init hook
+        self._pre_init_hook()
+
+        # 3. if UPDATE_NODE=true, try to update all installed nodes
+        if prev_config and self.update_nodes:
+            NodesManager.update_all_nodes()
+
+        # 4. init nodes
         current_nodes_config = current_config.get("custom_nodes", [])
         prev_nodes_config = prev_config.get("custom_nodes", [])
         if self.init_nodes and current_nodes_config:
@@ -121,7 +154,7 @@ class ComfyUILauncher:
                 if failed:
                     failed_config["custom_nodes"] = failed
 
-        # 4. init models
+        # 5. init models
         current_models_config = current_config.get("models", [])
         prev_models_config = prev_config.get("models", [])
         if self.init_models and current_models_config:
@@ -132,23 +165,17 @@ class ComfyUILauncher:
                 if failed:
                     failed_config["models"] = failed
 
-        # 5. exec post-init scripts
-        if self.post_init_scripts:
-            if self.post_init_scripts.is_dir():
-                logger.info("🛠️ Executing post-init scripts...")
-                exec_scripts_in_dir(self.post_init_scripts)
-            elif self.post_init_scripts.is_file():
-                logger.warning(f"⚠️ {self.post_init_scripts} invalid, removing...")
-                self.post_init_scripts.unlink()
+        # 6. post-init hook
+        self._post_init_hook()
 
-        # 6. report failed config
+        # 7. report failed config
         if failed_config:
             logger.error("❌ Failed to process config, will retry on next boot:")
             for key, value in failed_config.items():
                 logger.error(f"❌ Failed {len(value)} {key}:")
                 print_list_tree(value)
 
-        # 7. save succeeded config
+        # 8. save succeeded config
         succeeded_config = {}
         for key, value in current_config.items():
             if key in failed_config:
@@ -159,13 +186,26 @@ class ComfyUILauncher:
                 succeeded_config[key] = value
         boot_config.save_config(path=self.prev_boot_config, config=succeeded_config)
 
-        # 8. launch comfyui
-        logger.info("🚀 Launching ComfyUI...")
+        # 9. launch comfyui
         launch_args = ["--listen", self.listen, "--port", str(self.port)]
         if self.extra_args:
             launch_args.extend(self.extra_args.split())
         cmd = [sys.executable, str(self.app_path / "main.py")] + launch_args
-        subprocess.run(cmd, check=False)
+
+        exit_code = 0
+        try:
+            logger.info("🚀 Launching ComfyUI...")
+            self.comfyui_process = subprocess.Popen(cmd)
+            exit_code = self.comfyui_process.wait()
+            logger.info(f"🛑 ComfyUI exited with code: {exit_code}")
+        except Exception as e:
+            logger.error(
+                f"❌ An unexpected error occurred while managing the process: {e}"
+            )
+            exit_code = 1
+        finally:
+            self._post_exit_hook()
+            sys.exit(exit_code)
 
 
 def main():
