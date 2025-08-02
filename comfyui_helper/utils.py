@@ -32,12 +32,6 @@ def compile_pattern(pattern_str: str) -> re.Pattern:
         return None
 
 
-def json_default(obj):
-    if isinstance(obj, Path):
-        return str(obj)
-    raise TypeError
-
-
 def preprocess_url(url: str) -> str:
     parsed_url = urlparse(url)
     # check if url is valid

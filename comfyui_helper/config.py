@@ -5,7 +5,7 @@ from pathlib import Path
 
 import tomllib
 
-from .utils import compile_pattern, filter_lists, json_default, logger, print_list_tree
+from .utils import compile_pattern, filter_lists, logger, print_list_tree
 
 
 class ConfigManager:
@@ -28,6 +28,11 @@ class ConfigManager:
             return (int(match.group(1)), filename)
         # If no numeric prefix, sort after numbered files
         return (float("inf"), filename)
+
+    def _json_default(self, obj):
+        if isinstance(obj, Path):
+            return str(obj)
+        raise TypeError(f"Type {type(obj)} is not JSON serializable")
 
     def parse_config_files(self, files: list[Path]) -> dict:
         full_config = defaultdict(list)
@@ -105,7 +110,7 @@ class ConfigManager:
     def save_config(self, path: Path, config: dict) -> bool:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(config, default=json_default, indent=4))
+            path.write_text(json.dumps(config, default=self._json_default, indent=4))
             logger.info(f"✅ Current config saved to {path}")
             return True
         except Exception as e:
