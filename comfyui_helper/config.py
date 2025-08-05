@@ -5,7 +5,12 @@ from pathlib import Path
 
 import tomllib
 
-from .utils import compile_pattern, filter_lists, logger, print_list_tree
+from .utils import (
+    compile_pattern,
+    filter_path_list,
+    logger,
+    print_list_tree,
+)
 
 
 class ConfigManager:
@@ -69,7 +74,9 @@ class ConfigManager:
             logger.info(f"⚡ Exclude config filter: {exclude_pattern}")
             need_filter = True
         if need_filter:
-            config_files = filter_lists(config_files, include_pattern, exclude_pattern)
+            config_files = filter_path_list(
+                config_files, include_pattern, exclude_pattern
+            )
 
         # sort config files by numeric prefix
         config_files.sort(key=self._sort_by_numeric_prefix)

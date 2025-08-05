@@ -219,15 +219,15 @@ def exec_cm_cli(
     return exec_command([sys.executable, COMFYUI_MN_CLI, command] + args, **kwargs)
 
 
-def filter_lists(
-    list: list, include_pattern: str = None, exclude_pattern: str = None
-) -> list:
+def filter_path_list(
+    list: list[Path], include_pattern: str = None, exclude_pattern: str = None
+) -> list[Path]:
     if include_pattern:
         include_pattern = compile_pattern(include_pattern)
-        list = [item for item in list if include_pattern.search(item)]
+        list = [path for path in list if include_pattern.search(str(path))]
     if exclude_pattern:
         exclude_pattern = compile_pattern(exclude_pattern)
-        list = [item for item in list if not exclude_pattern.search(item)]
+        list = [path for path in list if not exclude_pattern.search(str(path))]
     return list
 
 
