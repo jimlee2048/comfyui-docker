@@ -7,6 +7,7 @@ import urllib
 from functools import partial
 from pathlib import Path
 from urllib.parse import urlparse
+from dataclasses import is_dataclass, asdict
 
 import git
 
@@ -20,6 +21,14 @@ from .constants import (
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=LOG_LEVEL, format="%(message)s", datefmt="[%X]")
+
+
+def json_default(obj):
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, Path):
+        return str(obj)
+    raise TypeError(f"Type {type(obj)} is not JSON serializable")
 
 
 def compile_pattern(pattern_str: str) -> re.Pattern:
@@ -231,9 +240,9 @@ def filter_path_list(
     return list
 
 
-def print_list_tree(list: list) -> None:
+def print_list_tree(list: list, log_level: int = logging.INFO) -> None:
     for item in list:
-        logger.info(f"└─ {str(item)}")
+        logger.log(log_level, f"└─ {str(item)}")
 
 
 class Progress:

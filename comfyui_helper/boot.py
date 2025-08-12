@@ -1,7 +1,10 @@
+import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
+import logging
 from pathlib import Path
 
 from .constants import (
@@ -28,18 +31,81 @@ from .config import ConfigManager
 from .models import ModelsManager
 from .nodes import NodesManager
 from .utils import (
+    json_default,
     exec_scripts_in_dir,
     logger,
     print_list_tree,
 )
 
 
+class StateManager:
+    def __init__(self, store_path: Path):
+        self._current_state = {}
+        self._prev_state = self._load_prev_state(store_path)
+        self.store_path = store_path
+
+    @property
+    def prev_state(self):
+        return self._prev_state
+
+    def _load_prev_state(self, path: Path) -> dict:
+        if path is None:
+            logger.info("ℹ️ No previous state path provided")
+            return {}
+
+        if path.is_file():
+            logger.info("📂 Detected previous state, loading...")
+            try:
+                content = json.loads(path.read_text())
+                logger.debug(f"🛠️ Loaded previous state: {content}")
+                return content
+            except Exception as e:
+                logger.error(f"❌ Failed to load previous state '{path}': {str(e)}")
+                return {}
+        elif path.is_dir():
+            logger.warning("⚠️ Detected invalid previous state, removing...")
+            try:
+                shutil.rmtree(path)
+            except Exception as e:
+                logger.error(f"❌ Failed to remove invalid state: {str(e)}")
+            return {}
+        else:
+            logger.info("ℹ️ No previous state found")
+            return {}
+
+    @property
+    def current_state(self):
+        return self._current_state
+
+    def update(self, category: str, items: list):
+        if category in self._current_state:
+            self._current_state[category].extend(items)
+        else:
+            self._current_state[category] = items
+        logger.debug(f"🛠️ Updated current state: {self.current_state}")
+        self.write()
+
+    def write(self) -> bool:
+        path = self.store_path
+        config = self.current_state
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            content = json.dumps(config, default=json_default, indent=4)
+            path.write_text(content)
+            logger.info(f"✅ Current state saved to {path}")
+            logger.debug(f"🛠️ Saved state file content: {content}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to save current state: {str(e)}")
+            return False
+
+
 class ComfyUILauncher:
     def __init__(
         self,
         app_path: Path,
-        boot_config: Path,
-        prev_state: Path,
+        config_dir: Path,
+        state_path: Path,
         include_config: str = None,
         exclude_config: str = None,
         pre_init_scripts: Path = None,
@@ -52,8 +118,8 @@ class ComfyUILauncher:
         extra_args: str = None,
     ):
         self.app_path = app_path
-        self.boot_config = boot_config
-        self.prev_state = prev_state
+        self.config_dir = config_dir
+        self.state_path = state_path
         self.include_config = include_config
         self.exclude_config = exclude_config
         self.pre_init_scripts = pre_init_scripts
@@ -64,6 +130,8 @@ class ComfyUILauncher:
         self.listen = listen
         self.port = port
         self.extra_args = extra_args
+        self.config_manager = None
+        self.state_manager = None
         self.comfyui_process = None
         self._check_env()
         self._setup_signal_handlers()
@@ -121,20 +189,46 @@ class ComfyUILauncher:
                 logger.warning(f"⚠️ {self.post_init_scripts} invalid, removing...")
                 self.post_init_scripts.unlink()
 
+    def _init_nodes(self, config: list[dict], prev_state: list[dict] = None):
+        nodes_manager = NodesManager(config, prev_state)
+        result = nodes_manager.init_nodes()
+        installed, removed, failed = [], [], []
+        if result is not None:
+            installed, removed, failed = result
+        if failed:
+            logger.error(
+                f"❌ Failed to install {len(failed)} custom_nodes, will retry on next boot:"
+            )
+            print_list_tree(failed, logging.ERROR)
+        return installed
+
+    def _init_models(self, config: list[dict], prev_state: list[dict] = None):
+        models_manager = ModelsManager(config, prev_state)
+        result = models_manager.init_models()
+        downloaded, removed, moved, failed = [], [], [], []
+        if result is not None:
+            downloaded, removed, moved, failed = result
+        if failed:
+            logger.error(
+                f"❌ Failed to download {len(failed)} models, will retry on next boot:"
+            )
+            print_list_tree(failed, logging.ERROR)
+        return downloaded + removed
+
     def _post_exit_hook(self):
         pass
 
     def startup(self):
-        # 1. load boot config
-        boot_config = ConfigManager(
-            config_dir=self.boot_config,
-            prev_state=self.prev_state,
+        # 1. load config & state
+        self.config_manager = ConfigManager(
+            config_dir=self.config_dir,
             include_pattern=self.include_config,
             exclude_pattern=self.exclude_config,
         )
-        current_config = boot_config.config
-        prev_state = boot_config.prev_state
-        failed_config = {}
+        current_config = self.config_manager.config
+
+        self.state_manager = StateManager(self.state_path)
+        prev_state = self.state_manager.prev_state
 
         # 2. pre-init hook
         self._pre_init_hook()
@@ -144,54 +238,29 @@ class ComfyUILauncher:
             NodesManager.update_all_nodes()
 
         # 4. init nodes
-        current_nodes_config = current_config.get("custom_nodes", [])
-        prev_nodes_state = prev_state.get("custom_nodes", [])
-        if self.init_nodes and current_nodes_config:
-            nodes_manager = NodesManager(current_nodes_config, prev_nodes_state)
-            result = nodes_manager.init_nodes()
-            if result is not None:
-                _, _, failed = result
-                if failed:
-                    failed_config["custom_nodes"] = failed
+        nodes_current_config = current_config.get("custom_nodes", [])
+        nodes_prev_state = prev_state.get("custom_nodes", [])
+        if self.init_nodes and nodes_current_config:
+            nodes_successed = self._init_nodes(nodes_current_config, nodes_prev_state)
+            self.state_manager.update("custom_nodes", nodes_successed)
 
         # 5. init models
-        current_models_config = current_config.get("models", [])
-        prev_models_state = prev_state.get("models", [])
-        if self.init_models and current_models_config:
-            models_manager = ModelsManager(current_models_config, prev_models_state)
-            result = models_manager.init_models()
-            if result is not None:
-                _, _, _, failed = result
-                if failed:
-                    failed_config["models"] = failed
+        models_current_config = current_config.get("models", [])
+        models_prev_state = prev_state.get("models", [])
+        if self.init_models and models_current_config:
+            models_successed = self._init_models(
+                models_current_config, models_prev_state
+            )
+            self.state_manager.update("models", models_successed)
 
         # 6. post-init hook
         self._post_init_hook()
 
-        # 7. report failed config
-        if failed_config:
-            logger.error("❌ Failed to process config, will retry on next boot:")
-            for key, value in failed_config.items():
-                logger.error(f"❌ Failed {len(value)} {key}:")
-                print_list_tree(value)
-
-        # 8. save state
-        succeeded_config = {}
-        for key, value in current_config.items():
-            if key in failed_config:
-                succeeded_config[key] = [
-                    item for item in value if item not in failed_config[key]
-                ]
-            else:
-                succeeded_config[key] = value
-        boot_config.save_state(path=self.prev_state, config=succeeded_config)
-
-        # 9. launch comfyui
+        # 7. launch comfyui
         launch_args = ["--listen", self.listen, "--port", str(self.port)]
         if self.extra_args:
             launch_args.extend(self.extra_args.split())
         cmd = [sys.executable, str(self.app_path / "main.py")] + launch_args
-
         exit_code = 0
         try:
             logger.info("🚀 Launching ComfyUI...")
@@ -215,8 +284,8 @@ def main():
         port=8188,
         extra_args=COMFYUI_EXTRA_ARGS,
         app_path=COMFYUI_PATH,
-        boot_config=BOOT_CONFIG_DIR,
-        prev_state=BOOT_PREV_STATE_PATH,
+        config_dir=BOOT_CONFIG_DIR,
+        state_path=BOOT_PREV_STATE_PATH,
         include_config=BOOT_CONFIG_INCLUDE,
         exclude_config=BOOT_CONFIG_EXCLUDE,
         pre_init_scripts=BOOT_PRE_INIT_SCRIPTS_DIR,
