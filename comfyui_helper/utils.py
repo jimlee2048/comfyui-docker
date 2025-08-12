@@ -99,6 +99,7 @@ def move_file(src: Path, dst: Path) -> bool | None:
         return None
     try:
         logger.info(f"📦 Moving file: {src} -> {dst}")
+        dst.parent.mkdir(parents=True, exist_ok=True)
         src.rename(dst)
     except Exception as e:
         logger.error(f"❌ Failed to move file: {src} -> {dst}\n{str(e)}")
