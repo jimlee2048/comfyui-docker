@@ -207,8 +207,15 @@ class NodesManager:
         self.prev_state = self._load_config(prev_state) if prev_state else []
 
     def _node_factory(self, config: dict) -> Node:
+        # from prev state
+        if "path" in config:
+            source = config["source"]
+            name = config["name"]
+            version = config.get("version")
+            url = config.get("url")
+            script = config.get("script")
         # source: registry
-        if "node_id" in config:
+        elif "node_id" in config:
             source = "registry"
             name = config["node_id"]
             version = config.get("version")
@@ -228,11 +235,11 @@ class NodesManager:
             raise ValueError("Invalid node config. Missing 'node_id' or 'url'")
         # create node object
         return Node(
-            name=name,
-            source=source,
-            version=version,
-            url=url,
-            script=script,
+            name,
+            source,
+            version,
+            url,
+            script,
         )
 
     def _load_config(self, nodes_config: list[dict]) -> list[Node]:
