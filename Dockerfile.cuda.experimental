@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:13.0.0-cudnn-devel-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -21,9 +21,10 @@ ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 ENV PIP_ROOT_USER_ACTION=ignore
 # bypass PEP 668
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/nightly/cu129"
+ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu130"
+ENV PIP_EXTRA_INDEX_URL=${PYTORCH_INDEX_URL}
 
-# install comfyui - method 1: manually clone
+# install comfyui
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/Comfy-Org/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
@@ -51,18 +52,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install triton
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --pre triton
-# install xformers
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --pre xformers
-# install sageattention2
-# ARG TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install -v -U git+https://github.com/jimlee2048/SageAttention.git
 
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    "numpy<2" \
     pyopengl pyopengl-accelerate \
     onnx onnxruntime onnxruntime-gpu \
     transformers diffusers accelerate \

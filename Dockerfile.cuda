@@ -1,5 +1,4 @@
-# https://hub.docker.com/r/pytorch/pytorch/
-FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -11,7 +10,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    python3.12-full python3.12-dev python3-pip tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -20,9 +19,12 @@ RUN --mount=type=cache,target=/var/cache/apt \
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 # suppress [WARNING: Running pip as the 'root' user]
 ENV PIP_ROOT_USER_ACTION=ignore
-ENV PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu128"
+# bypass PEP 668
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/cu129"
+ENV PIP_EXTRA_INDEX_URL=${PYTORCH_INDEX_URL}
 
-# install comfyui - method 1: manually clone
+# install comfyui
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/Comfy-Org/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
@@ -36,6 +38,10 @@ RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
 ARG COMFYUI_MN_VERSION=main
 RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 
+# install pytorch latest
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install \
+    torch==2.8 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -45,26 +51,25 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install triton
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install triton --index-url https://download.pytorch.org/whl/cu128
+    pip install triton --index-url ${PYTORCH_INDEX_URL}
 
 # install xformers
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install xformers --index-url https://download.pytorch.org/whl/cu128
+    pip install xformers --index-url ${PYTORCH_INDEX_URL}
 
 # install nunchaku
 RUN --mount=type=cache,target=/root/.cache/pip \
     NUNCHAKU_LATEST_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.7-cp311-cp311-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.8-cp311-cp311-linux_x86_64.whl"
 
 # install sageattention2
 RUN --mount=type=cache,target=/root/.cache/pip \
     SAGEATTENTION_LATEST_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu128torch2.7-cp311-cp311-linux_x86_64.whl"
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu129torch2.8-cp311-cp311-linux_x86_64.whl"
 
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    "numpy<2" \
     pyopengl pyopengl-accelerate \
     onnx onnxruntime onnxruntime-gpu \
     transformers diffusers accelerate \
