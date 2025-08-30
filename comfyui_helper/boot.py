@@ -277,7 +277,7 @@ class ComfyUILauncher:
                     logger.warning(
                         f"⚠️ Nodes: {nodes_failed_count} failed to process, will retry on next boot:"
                     )
-                    print_list_tree(nodes_failed, level=logging.WARNING)
+                    print_list_tree(nodes_failed, log_level=logging.WARNING)
 
         if self.init_models:
             if models_init_result is None:
@@ -300,7 +300,7 @@ class ComfyUILauncher:
                     logger.warning(
                         f"⚠️ Models: {models_failed_count} failed to process, will retry on next boot:"
                     )
-                    print_list_tree(models_failed, level=logging.WARNING)
+                    print_list_tree(models_failed, log_level=logging.WARNING)
 
         logger.info("--------------------")
 
