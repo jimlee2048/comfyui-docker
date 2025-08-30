@@ -192,8 +192,7 @@ def exec_scripts_in_dir(dir: Path) -> bool:
 
     queue_length = len(queue)
     logger.info(f"🛠️ Found {queue_length} scripts in {dir.name}:")
-    for script in queue:
-        logger.info(f"└─ {script.name}")
+    print_list_tree(queue)
 
     succeed = []
     failed = []

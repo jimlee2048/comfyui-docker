@@ -308,8 +308,7 @@ class NodesManager:
         if install_queue:
             install_count = len(install_queue)
             logger.info(f"📦 Installing {install_count} nodes:")
-            for node in install_queue:
-                logger.info(f"└─ {node.name} ({node.source})")
+            print_list_tree(install_queue)
             with Progress(total_steps=install_count) as p:
                 for node in install_queue:
                     p.advance()
@@ -321,8 +320,7 @@ class NodesManager:
         if remove_queue:
             remove_count = len(remove_queue)
             logger.info(f"🗑️ Removing {remove_count} nodes:")
-            for node in remove_queue:
-                logger.info(f"└─ {node.name}")
+            print_list_tree(remove_queue)
             with Progress(total_steps=remove_count) as p:
                 for node in remove_queue:
                     p.advance()
@@ -346,8 +344,7 @@ class NodesManager:
             return None
         update_count = len(self.current_config)
         logger.info(f"📦 Updating {update_count} nodes:")
-        for node in self.current_config:
-            logger.info(f"└─ {node.name}")
+        print_list_tree(self.current_config)
         with Progress(total_steps=update_count) as p:
             for node in self.current_config:
                 p.advance()

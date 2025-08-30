@@ -185,10 +185,11 @@ class ModelsManager:
         if move_queue:
             queue_length = len(move_queue)
             logger.info(f"📦 Moving {queue_length} models:")
-            for task in move_queue:
-                logger.info(
-                    f"└─ {task['prev_model'].path} -> {task['current_model'].path}"
-                )
+            move_details = [
+                f"{task['prev_model'].path} -> {task['current_model'].path}"
+                for task in move_queue
+            ]
+            print_list_tree(move_details)
             with Progress(total_steps=queue_length) as p:
                 for task in move_queue:
                     p.advance()
@@ -202,8 +203,7 @@ class ModelsManager:
         if remove_queue:
             queue_length = len(remove_queue)
             logger.info(f"🗑️ Removing {queue_length} models:")
-            for model in remove_queue:
-                logger.info(f"└─ {model.filename}")
+            print_list_tree(remove_queue)
             with Progress(total_steps=queue_length) as p:
                 for model in remove_queue:
                     p.advance()
@@ -217,8 +217,7 @@ class ModelsManager:
         if download_queue:
             queue_length = len(download_queue)
             logger.info(f"⬇️ Downloading {queue_length} models:")
-            for model in download_queue:
-                logger.info(f"└─ {model.filename}")
+            print_list_tree(download_queue)
             with Progress(total_steps=queue_length) as p:
                 for model in download_queue:
                     p.advance()
