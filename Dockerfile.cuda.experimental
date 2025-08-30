@@ -14,15 +14,20 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# pip config
-# let .pyc files be stored in one place
+# prepare python environment
+## create venv
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+## write venv to .bashrc
+RUN echo "source /opt/venv/bin/activate" >> ~/.bashrc
+## let .pyc files be stored in one place
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
-# suppress [WARNING: Running pip as the 'root' user]
-ENV PIP_ROOT_USER_ACTION=ignore
-# bypass PEP 668
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
-ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu130"
+## add pytorch index url to pip config
+ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/cu129"
 ENV PIP_EXTRA_INDEX_URL=${PYTORCH_INDEX_URL}
+## upgrade pip, setuptools, wheel
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -U pip setuptools wheel
 
 # install comfyui
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
