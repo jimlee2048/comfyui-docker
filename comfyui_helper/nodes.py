@@ -287,11 +287,6 @@ class NodesManager:
         install_queue = []
         remove_queue = []
 
-        logger.debug("🛠️ Install queue:")
-        print_list_tree(install_queue, log_level=logging.DEBUG)
-        logger.debug("🛠️ Remove queue:")
-        print_list_tree(remove_queue, log_level=logging.DEBUG)
-
         if self.prev_state:
             setup_exists = False
             # compare with previous state
@@ -309,6 +304,11 @@ class NodesManager:
         if not (install_queue or remove_queue):
             logger.info("ℹ️ No nodes config changes to proceed.")
             return None
+
+        logger.debug("🛠️ Nodes: Install queue:")
+        print_list_tree(install_queue, log_level=logging.DEBUG)
+        logger.debug("🛠️ Nodes: Remove queue:")
+        print_list_tree(remove_queue, log_level=logging.DEBUG)
 
         installed = []
         removed = []

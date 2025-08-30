@@ -181,11 +181,11 @@ class ModelsManager:
             logger.info("ℹ️ No models config changes to proceed")
             return None
 
-        logger.debug("🛠️ Download queue:")
+        logger.debug("🛠️ Models: Download queue:")
         print_list_tree(download_queue, log_level=logging.DEBUG)
-        logger.debug("🛠️ Remove queue:")
+        logger.debug("🛠️ Models: Remove queue:")
         print_list_tree(remove_queue, log_level=logging.DEBUG)
-        logger.debug("🛠️ Move queue:")
+        logger.debug("🛠️ Models: Move queue:")
         move_details = [
             f"{task['prev_model'].path} -> {task['current_model'].path}"
             for task in move_queue
