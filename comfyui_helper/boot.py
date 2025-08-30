@@ -189,32 +189,6 @@ class ComfyUILauncher:
                 logger.warning(f"⚠️ {self.post_init_scripts} invalid, removing...")
                 self.post_init_scripts.unlink()
 
-    def _init_nodes(self, config: list[dict], prev_state: list[dict] = None):
-        nodes_manager = NodesManager(config, prev_state)
-        result = nodes_manager.init_nodes()
-        installed, removed, failed = [], [], []
-        if result is not None:
-            installed, removed, failed = result
-        if failed:
-            logger.error(
-                f"❌ Failed to install {len(failed)} custom_nodes, will retry on next boot:"
-            )
-            print_list_tree(failed, logging.ERROR)
-        return installed
-
-    def _init_models(self, config: list[dict], prev_state: list[dict] = None):
-        models_manager = ModelsManager(config, prev_state)
-        result = models_manager.init_models()
-        downloaded, removed, moved, failed = [], [], [], []
-        if result is not None:
-            downloaded, removed, moved, failed = result
-        if failed:
-            logger.error(
-                f"❌ Failed to download {len(failed)} models, will retry on next boot:"
-            )
-            print_list_tree(failed, logging.ERROR)
-        return downloaded + removed
-
     def _post_exit_hook(self):
         pass
 
@@ -239,31 +213,105 @@ class ComfyUILauncher:
 
         # 4. init nodes
         nodes_current_config = current_config.get("custom_nodes", [])
-        nodes_prev_state = prev_state.get("custom_nodes", [])
+        nodes_init_result = None
         if self.init_nodes and nodes_current_config:
-            nodes_successed = self._init_nodes(nodes_current_config, nodes_prev_state)
-            self.state_manager.update("custom_nodes", nodes_successed)
+            nodes_prev_state = prev_state.get("custom_nodes", [])
+            nodes_manager = NodesManager(nodes_current_config, nodes_prev_state)
+            nodes_init_result = nodes_manager.init_nodes()
+            if nodes_init_result is not None:
+                nodes_installed, nodes_removed, nodes_existed, nodes_failed = (
+                    nodes_init_result
+                )
+                nodes_successed = [
+                    node
+                    for node in nodes_manager.current_config
+                    if node not in nodes_failed
+                ]
+                self.state_manager.update("custom_nodes", nodes_successed)
 
         # 5. init models
         models_current_config = current_config.get("models", [])
-        models_prev_state = prev_state.get("models", [])
+        models_init_result = None
         if self.init_models and models_current_config:
-            models_successed = self._init_models(
-                models_current_config, models_prev_state
-            )
-            self.state_manager.update("models", models_successed)
+            models_prev_state = prev_state.get("models", [])
+            models_manager = ModelsManager(models_current_config, models_prev_state)
+            models_init_result = models_manager.init_models()
+            if models_init_result is not None:
+                (
+                    models_downloaded,
+                    models_removed,
+                    models_moved,
+                    models_existed,
+                    models_failed,
+                ) = models_init_result
+                models_successed = [
+                    model
+                    for model in models_manager.current_config
+                    if model not in models_failed
+                ]
+                self.state_manager.update("models", models_successed)
 
         # 6. post-init hook
         self._post_init_hook()
 
-        # 7. launch comfyui
+        # 7. init summary
+        logger.info("--- Initialize Summary ---")
+
+        if self.init_nodes:
+            if nodes_init_result is None:
+                logger.info("🧩 Nodes: No config changes, initialization skipped.")
+            else:
+                nodes_total_count = len(nodes_current_config)
+                nodes_failed_count = len(nodes_failed)
+                nodes_success_count = len(nodes_successed)
+                logger.info(
+                    f"🧩 Nodes: {nodes_success_count}/{nodes_total_count} success:"
+                )
+                nodes_success_details = [
+                    f"installed: {len(nodes_installed)}",
+                    f"removed: {len(nodes_removed)}",
+                    f"existed: {len(nodes_existed)}",
+                ]
+                print_list_tree(nodes_success_details)
+                if nodes_failed_count:
+                    logger.warning(
+                        f"⚠️ Nodes: {nodes_failed_count} failed to process, will retry on next boot:"
+                    )
+                    print_list_tree(nodes_failed, level=logging.WARNING)
+
+        if self.init_models:
+            if models_init_result is None:
+                logger.info("📦 Models: No config changes, initialization skipped.")
+            else:
+                models_total_count = len(models_current_config)
+                models_failed_count = len(models_failed)
+                models_success_count = len(models_successed)
+                logger.info(
+                    f"📦 Models: {models_success_count}/{models_total_count} success:"
+                )
+                models_success_details = [
+                    f"downloaded: {len(models_downloaded)}",
+                    f"removed: {len(models_removed)}",
+                    f"moved: {len(models_moved)}",
+                    f"existed: {len(models_existed)}",
+                ]
+                print_list_tree(models_success_details)
+                if models_failed_count:
+                    logger.warning(
+                        f"⚠️ Models: {models_failed_count} failed to process, will retry on next boot:"
+                    )
+                    print_list_tree(models_failed, level=logging.WARNING)
+
+        logger.info("--------------------")
+
+        # 8. launch comfyui
+        logger.info("🚀 Launching ComfyUI...")
         launch_args = ["--listen", self.listen, "--port", str(self.port)]
         if self.extra_args:
             launch_args.extend(self.extra_args.split())
         cmd = [sys.executable, str(self.app_path / "main.py")] + launch_args
         exit_code = 0
         try:
-            logger.info("🚀 Launching ComfyUI...")
             self.comfyui_process = subprocess.Popen(cmd)
             exit_code = self.comfyui_process.wait()
             logger.info(f"🛑 ComfyUI exited with code: {exit_code}")
@@ -278,7 +326,6 @@ class ComfyUILauncher:
 
 
 def main():
-    """Main entry point for the comfyui-boot console script."""
     launcher = ComfyUILauncher(
         listen="0.0.0.0,::",
         port=8188,

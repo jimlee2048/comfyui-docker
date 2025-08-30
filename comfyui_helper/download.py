@@ -68,7 +68,7 @@ class Downloader:
         header: str = None,
         max_retries: int = 3,
         retries_interval: int = 2,
-    ):
+    ) -> bool:
         download_options = {"dir": dir, "out": filename}
         if header:
             download_options["header"] = header

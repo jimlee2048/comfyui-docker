@@ -132,7 +132,7 @@ class ModelsManager:
 
     def init_models(
         self,
-    ) -> tuple[list[Model], list[Model], list[Model], list[Model]] | None:
+    ) -> tuple[list[Model], list[Model], list[Model], list[Model], list[Model]] | None:
         if not self.current_config:
             logger.info("📦 No models in config")
             return None
@@ -176,7 +176,12 @@ class ModelsManager:
         else:
             download_queue = self.current_config
 
+        if not (download_queue or remove_queue or move_queue):
+            logger.info("ℹ️ No models config changes to proceed")
+            return None
+
         downloaded = []
+        existed = []
         removed = []
         moved = []
         failed = []
@@ -208,10 +213,10 @@ class ModelsManager:
                 for model in remove_queue:
                     p.advance()
                     result = model.remove()
-                    if result is False:
-                        failed.append(model)
-                    elif result is True:  # Only count actual removals as success
+                    if result is True:
                         removed.append(model)
+                    elif result is False:
+                        failed.append(model)
                     # None means file not found - don't count as removed or failed
         # process download_queue
         if download_queue:
@@ -222,9 +227,11 @@ class ModelsManager:
                 for model in download_queue:
                     p.advance()
                     result = model.download(self.downloader)
-                    if result is False:
-                        failed.append(model)
-                    else:  # None means already exists, True means success
+                    if result is True:
                         downloaded.append(model)
+                    elif result is None:
+                        existed.append(model)
+                    elif result is False:
+                        failed.append(model)
 
-        return (downloaded, removed, moved, failed)
+        return (downloaded, removed, moved, existed, failed)

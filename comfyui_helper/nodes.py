@@ -133,7 +133,7 @@ class Node:
                 logger.info(f"ℹ️ {self.name} already exists. Skipped.")
                 return None, result
             elif result == "ENABLED":
-                logger.warning(f"⚠️ {self.name} already exists. Enabled.")
+                logger.warning(f"⚠️ {self.name} already exists, but just enabled.")
                 return None, result
         # if no result found, return False
         return False, "Failed to parse installation result"
@@ -142,6 +142,7 @@ class Node:
         # pre: check if node is excluded or exists
         if self.is_excluded():
             logger.warning(f"⚠️ {self.name} is excluded from installation. Skipped.")
+            # will be treat as existed
             return None
         if self.is_exists():
             if setup_exists:
@@ -154,16 +155,14 @@ class Node:
         logger.info(f"📦 Installing node: {self.name}")
         try:
             if self.source == "registry":
-                install_result = exec_cm_cli(
+                install_output = exec_cm_cli(
                     "install", [f"{self.name}@{self.version}"], check=True
                 )
-                install_success, error_msg = self._check_registry_install(
-                    install_result
-                )
-                if install_success is None:
-                    # no actual install processed, skip post install process
+                install_result, error_msg = self._check_registry_install(install_output)
+                if install_result is None:
+                    # "SKIP" or "ENABLED" -> node exists, will skip post install process
                     return None
-                elif install_success is False:
+                elif install_result is False:
                     raise Exception(f"{error_msg}")
             if self.source == "git":
                 if self.version:
@@ -173,7 +172,10 @@ class Node:
                     )
                 else:
                     exec_command(["git", "clone", self.url, str(self.path)], check=True)
-                self.setup()
+                if not self.setup():
+                    # remove downloaded files, will treat as not exist node to retry
+                    shutil.rmtree(self.path)
+                    raise Exception("failed to setup")
             logger.info(f"✅ Successfully installed node: {self.name}")
         except Exception as e:
             logger.error(f"❌ Failed to install node {self.name}: {str(e)}")
@@ -188,6 +190,7 @@ class Node:
         # pre: check if node is excluded or exists
         if self.is_excluded():
             logger.warning(f"⚠️ {self.name} is excluded from removal. Skipped.")
+            # will be treat as not existed
             return None
         if not self.is_exists():
             logger.info(f"ℹ️ {self.name} not found. Skipped.")
@@ -273,7 +276,9 @@ class NodesManager:
 
         return unique_nodes
 
-    def init_nodes(self) -> tuple[list[Node], list[Node], list[Node]] | None:
+    def init_nodes(
+        self,
+    ) -> tuple[list[Node], list[Node], list[Node], list[Node]] | None:
         if not self.current_config:
             logger.info("📦 No nodes in config")
             return None
@@ -295,12 +300,13 @@ class NodesManager:
             setup_exists = True
             install_queue = self.current_config
 
-        if not install_queue and not remove_queue:
-            logger.info("ℹ️ No changes in nodes config. Skipped.")
+        if not (install_queue or remove_queue):
+            logger.info("ℹ️ No nodes config changes to proceed.")
             return None
 
         installed = []
         removed = []
+        existed = []
         failed = []
 
         # install
@@ -311,10 +317,14 @@ class NodesManager:
             with Progress(total_steps=install_count) as p:
                 for node in install_queue:
                     p.advance()
-                    if node.install(setup_exists=setup_exists) is False:
-                        failed.append(node)
-                    else:
+                    result = node.install(setup_exists=setup_exists)
+                    if result is True:
                         installed.append(node)
+                    elif result is None:
+                        existed.append(node)
+                    elif result is False:
+                        failed.append(node)
+
         # remove
         if remove_queue:
             remove_count = len(remove_queue)
@@ -323,14 +333,16 @@ class NodesManager:
             with Progress(total_steps=remove_count) as p:
                 for node in remove_queue:
                     p.advance()
-                    if node.remove() is False:
-                        failed.append(node)
-                    else:
+                    result = node.remove()
+                    if result is True:
                         removed.append(node)
-
+                    elif result is False:
+                        failed.append(node)
+                    # None means file not found - don't count as removed or failed
         return (
             installed,
             removed,
+            existed,
             failed,
         )
 
