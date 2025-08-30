@@ -79,7 +79,6 @@ class Node:
 
     def is_excluded(self) -> bool:
         if self.name in BOOT_INIT_NODE_EXCLUDE:
-            logger.warning(f"⚠️ {self.name} is excluded from installation")
             return True
         return False
 
