@@ -147,6 +147,12 @@ class ComfyUILauncher:
             logger.info("🌐 Applying CN network optimization")
             # pip source to ustc mirror
             os.environ["PIP_INDEX_URL"] = "https://mirrors.ustc.edu.cn/pypi/web/simple"
+            os.environ["PIP_EXTRA_INDEX_URL"] = os.environ.get(
+                "PIP_EXTRA_INDEX_URL", ""
+            ).replace(
+                "https://download.pytorch.org/whl/",
+                "https://mirrors.aliyun.com/pytorch-wheels/",
+            )
         if HF_API_TOKEN and HF_ENDPOINT_NETLOC.lower() not in ("huggingface.co"):
             logger.warning(
                 f"⚠️ HF_API_TOKEN will be sent to a third party endpoint: {HF_ENDPOINT}"
