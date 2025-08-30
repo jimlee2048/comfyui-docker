@@ -1,4 +1,5 @@
 import shutil
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from .utils import (
     logger,
     move_file,
     url_add_query_param,
+    print_list_tree,
 )
 
 
@@ -33,6 +35,9 @@ class Model:
 
     def __hash__(self):
         return hash(self.path)
+
+    def __str__(self):
+        return f"{self.filename} -> {self.dir}"
 
     def purge_redundancy(self):
         # remove huggingface cache
@@ -100,21 +105,30 @@ class ModelsManager:
         )
 
     def _load_config(self, models_config: list[dict]) -> list[Model]:
-        # use set to drop duplicates
-        models = set()
+        # 1. load all models
+        all_models: list[Model] = []
         for config in models_config:
             try:
                 # create model object
                 model = self._model_factory(config)
-                # add model to set, drop duplicates
-                if model in models:
-                    logger.warning(f"⚠️ Skip duplicate model: {model.filename}")
-                    continue
-                models.add(model)
+                all_models.append(model)
             except Exception as e:
                 logger.warning(f"⚠️ Skip invalid model config: {str(e)}\n{config}")
                 continue
-        return list(models)
+
+        # 2. remove duplicates while preserving order
+        unique_models = list(dict.fromkeys(all_models))
+
+        # 3. log warnings for duplicates found
+        if len(unique_models) < len(all_models):
+            model_counts = Counter(all_models)
+            duplicate_models = [
+                model for model, count in model_counts.items() if count > 1
+            ]
+            logger.warning(f"⚠️ Found {len(duplicate_models)} duplicate models:")
+            print_list_tree(duplicate_models)
+
+        return unique_models
 
     def init_models(
         self,

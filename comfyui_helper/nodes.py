@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from .utils import (
     is_valid_git_path,
     logger,
     preprocess_url,
+    print_list_tree,
 )
 
 
@@ -51,6 +53,12 @@ class Node:
 
     def __hash__(self):
         return hash(self.name)
+
+    def __str__(self):
+        info = f"{self.name} ({self.source})"
+        if self.version and self.version != "nightly":
+            info += f" @ {self.version}"
+        return info
 
     def is_exists(self) -> bool:
         if not self.path.exists():
@@ -243,21 +251,28 @@ class NodesManager:
         )
 
     def _load_config(self, nodes_config: list[dict]) -> list[Node]:
-        # use set to drop duplicates
-        nodes = set()
+        # 1. load all nodes as Node objects
+        all_nodes: list[Node] = []
         for config in nodes_config:
             try:
                 # create node object
                 node = self._node_factory(config)
-                # add node to set, will drop duplicates
-                if node in nodes:
-                    logger.warning(f"⚠️ Skip duplicate node: {node.name}")
-                    continue
-                nodes.add(node)
+                all_nodes.append(node)
             except Exception as e:
                 logger.warning(f"⚠️ Skip invalid node config: {str(e)}\n{config}")
                 continue
-        return list(nodes)
+
+        # 2. remove duplicates while preserving order (keep first occurrence)
+        unique_nodes = list(dict.fromkeys(all_nodes))
+
+        # 3. log warnings for duplicates found
+        if len(unique_nodes) < len(all_nodes):
+            node_counts = Counter(all_nodes)
+            duplicate_nodes = [node for node, count in node_counts.items() if count > 1]
+            logger.warning(f"⚠️ Found {len(duplicate_nodes)} duplicate nodes:")
+            print_list_tree(duplicate_nodes)
+
+        return unique_nodes
 
     def init_nodes(self) -> tuple[list[Node], list[Node], list[Node]] | None:
         if not self.current_config:
