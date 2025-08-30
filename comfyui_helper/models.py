@@ -1,4 +1,5 @@
 import shutil
+import logging
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -180,6 +181,17 @@ class ModelsManager:
             logger.info("ℹ️ No models config changes to proceed")
             return None
 
+        logger.debug("🛠️ Download queue:")
+        print_list_tree(download_queue, log_level=logging.DEBUG)
+        logger.debug("🛠️ Remove queue:")
+        print_list_tree(remove_queue, log_level=logging.DEBUG)
+        logger.debug("🛠️ Move queue:")
+        move_details = [
+            f"{task['prev_model'].path} -> {task['current_model'].path}"
+            for task in move_queue
+        ]
+        print_list_tree(move_details, log_level=logging.DEBUG)
+
         downloaded = []
         existed = []
         removed = []
@@ -190,10 +202,6 @@ class ModelsManager:
         if move_queue:
             queue_length = len(move_queue)
             logger.info(f"📦 Moving {queue_length} models:")
-            move_details = [
-                f"{task['prev_model'].path} -> {task['current_model'].path}"
-                for task in move_queue
-            ]
             print_list_tree(move_details)
             with Progress(total_steps=queue_length) as p:
                 for task in move_queue:

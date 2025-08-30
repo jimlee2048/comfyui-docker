@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import sys
+import logging
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -285,6 +286,11 @@ class NodesManager:
 
         install_queue = []
         remove_queue = []
+
+        logger.debug("🛠️ Install queue:")
+        print_list_tree(install_queue, log_level=logging.DEBUG)
+        logger.debug("🛠️ Remove queue:")
+        print_list_tree(remove_queue, log_level=logging.DEBUG)
 
         if self.prev_state:
             setup_exists = False

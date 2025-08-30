@@ -267,12 +267,9 @@ class ComfyUILauncher:
             if nodes_init_result is None:
                 logger.info("🧩 Nodes: No config changes, initialization skipped.")
             else:
-                nodes_total_count = len(nodes_current_config)
                 nodes_failed_count = len(nodes_failed)
                 nodes_success_count = len(nodes_successed)
-                logger.info(
-                    f"🧩 Nodes: {nodes_success_count}/{nodes_total_count} success:"
-                )
+                logger.info(f"🧩 Nodes: {nodes_success_count} success:")
                 nodes_success_details = [
                     f"installed: {len(nodes_installed)}",
                     f"removed: {len(nodes_removed)}",
@@ -289,12 +286,9 @@ class ComfyUILauncher:
             if models_init_result is None:
                 logger.info("📦 Models: No config changes, initialization skipped.")
             else:
-                models_total_count = len(models_current_config)
                 models_failed_count = len(models_failed)
                 models_success_count = len(models_successed)
-                logger.info(
-                    f"📦 Models: {models_success_count}/{models_total_count} success:"
-                )
+                logger.info(f"📦 Models: {models_success_count} success:")
                 models_success_details = [
                     f"downloaded: {len(models_downloaded)}",
                     f"removed: {len(models_removed)}",
@@ -308,7 +302,7 @@ class ComfyUILauncher:
                     )
                     print_list_tree(models_failed, log_level=logging.WARNING)
 
-        logger.info("--------------------")
+        logger.info("--------------------------")
 
         # 8. launch comfyui
         logger.info("🚀 Launching ComfyUI...")
