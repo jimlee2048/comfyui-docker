@@ -54,31 +54,27 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 2. Create and configure `.env` file base on example:
     ```bash
     cp example.env .env
-    # Edit .env to set your preferences
     ```
+    see [example.env](https://github.com/jimlee2048/comfyui-docker/blob/main/example.env) for more details.
 
 3. (Optional) Set up automatic node/model management:
-    - Enable in `.env`:
-      ```env
-      INIT_NODE=true
-      
-      INIT_MODEL=true
-      ```
-    - Create your boot config in `config/`
-        - Start with `config/example.toml`
-        - See my [personal config](https://github.com/jimlee2048/config-aigc-playground/tree/main/comfyui/config) for reference
+    - Set `INIT_NODE=true`  or/and `INIT_MODEL=true` in `.env`
+    - Create your boot config in `config/`, see [config/example.toml](https://github.com/jimlee2048/comfyui-docker/blob/main/config/example.toml) for more details.
 
 4. Review and adjust `docker-compose.yml` as needed:
     - Choose ComfyUI version via image tag
     - Configure volume mappings for persistent data
 
 5. Launch ComfyUI:
-    ```bash
-    docker compose up -d  # Run in background
-    # or
-    docker compose up    # Run in foreground
-    ```
-    First run may take longer due to node installation and model downloads.
+    - Run in foreground to see logs, recommended for first run.
+      ```bash
+      docker compose up
+      ```
+    - Or in background as services.
+      ```bash
+      docker compose up -d
+      ```
+    First run may take longer due to node installation and model downloads. 
 
 6. Access ComfyUI at `http://localhost:8188`
 
@@ -101,12 +97,13 @@ docker compose up -d
 ### ComfyUI Updates
 - Option 1: Use ComfyUI Manager in the web interface
 
-- Option 2: Pull latest image (may break some custom nodes):
+- Option 2: Pull latest image:
   ```bash
   docker compose pull
   docker compose down
   docker compose up -d
   ```
+
 ## TODO
 - [ ] ROCm version for AMD GPU
 - [ ] XPU version for Intel GPU
