@@ -75,6 +75,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
+    # to avoid possible incompatibility
+    numpy<2 \
     pyopengl pyopengl-accelerate \
     onnx onnxruntime onnxruntime-gpu \
     transformers diffusers accelerate \
