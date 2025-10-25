@@ -14,16 +14,17 @@ build/
 dev/
 volumes/
 .DS_Store
+*.log
 
 # local files
-*.log
-*extra_model_paths.yaml
-*.env
-config/*
-scripts/*
+**extra_model_paths.yaml
+docker/config/**
+docker/scripts/pre-start/**
+docker/scripts/post-init/**
+docker/scripts/post-install-node/**
 
 # exclude examples
-!example.env
-!config/example.toml
-!*.keep
-!*.example
+!docker/compose.yml
+!**.example
+!**example.*
+!**.keep

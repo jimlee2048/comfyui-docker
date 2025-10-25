@@ -4,8 +4,9 @@ on:
     branches:
       - main
     paths:
-      - README.md
       - .github/workflows/update-dockerhub-desc.yml
+      - README.md
+
 jobs:
   update-dockerhub-desc:
     runs-on: ubuntu-latest
