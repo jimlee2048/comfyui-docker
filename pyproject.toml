@@ -15,7 +15,7 @@ comfyui-boot = "comfyui_helper.boot:main"
 
 [tool.setuptools]
 packages = ["comfyui_helper"]
-package-dir = { "comfyui_helper" = "." }
+package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
 comfyui_helper = ["*.toml", "*.yaml", "*.yml"]

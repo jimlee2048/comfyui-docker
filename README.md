@@ -61,7 +61,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
     - Set `INIT_NODE=true`  or/and `INIT_MODEL=true` in `.env`
     - Create your boot config in `config/`, see [config/example.toml](https://github.com/jimlee2048/comfyui-docker/blob/main/config/example.toml) for more details.
 
-4. Review and adjust `docker-compose.yml` as needed:
+4. Review and adjust `compose.yml` as needed:
     - Choose ComfyUI version via image tag
     - Configure volume mappings for persistent data
 

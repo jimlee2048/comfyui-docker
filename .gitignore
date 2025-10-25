@@ -1,18 +1,29 @@
+# python
 .venv/
 venv/
 __pycache__/
+*.egg-info/
+.python-version
+
+# general cache
 .cache/
 temp/
 tmp/
-*debug.*
-*dev.*
+dist/
+build/
+dev/
+volumes/
+.DS_Store
+
+# local files
 *.log
-volume/
-extra_model_paths.yaml
+*extra_model_paths.yaml
 *.env
-!example.env
 config/*
+scripts/*
+
+# exclude examples
+!example.env
 !config/example.toml
-*-scripts/*
 !*.keep
 !*.example
