@@ -14,9 +14,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "Dockerfile.*"
-      - "comfyui_helper/**"
       - ".github/workflows/build-publish.yml"
+      - "Dockerfile.*"
+      - "src/**"
 
 jobs:
   fetch-upstream:

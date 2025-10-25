@@ -1,18 +1,30 @@
+# python
 .venv/
 venv/
 __pycache__/
+*.egg-info/
+.python-version
+
+# general cache
 .cache/
 temp/
 tmp/
-*debug.*
-*dev.*
+dist/
+build/
+dev/
+volumes/
+.DS_Store
 *.log
-volume/
-extra_model_paths.yaml
-*.env
-!example.env
-config/*
-!config/example.toml
-*-scripts/*
-!*.keep
-!*.example
+
+# local files
+**extra_model_paths.yaml
+docker/config/**
+docker/scripts/pre-start/**
+docker/scripts/post-init/**
+docker/scripts/post-install-node/**
+
+# exclude examples
+!docker/compose.yml
+!**.example
+!**example.*
+!**.keep

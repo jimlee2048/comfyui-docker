@@ -8,11 +8,11 @@ services:
     volumes:
       # basic comfyui paths
       ## your user config, including settings, saved workflows, logs, etc.
-      - ./volume/user:/workspace/ComfyUI/user
+      - ./volumes/user:/workspace/ComfyUI/user
       ## output folder
-      - ./volume/output:/workspace/ComfyUI/output
+      - ./volumes/output:/workspace/ComfyUI/output
       ## models folder
-      - ./volume/models:/workspace/ComfyUI/models
+      - ./volumes/models:/workspace/ComfyUI/models
       # boot process related paths
       ## boot config folder (optional if INIT_NODE & INIT_MODEL == false)
       - ./config:/workspace/boot_config
@@ -22,10 +22,6 @@ services:
       ## warning: won't get auto init at start, need to manually trigger init using comfyui-manager
       ## warning: don't map a same custom_nodes which have already defined in boot config
       # - /path/to/a_custom_nodes:/workspace/ComfyUI/custom_nodes/a_custom_nodes
-      ## use model from sd-webui-a1111 (optional)
-      # - ./extra_model_paths.yaml:/workspace/ComfyUI/extra_model_paths.yaml
-      # - /path/to/sd-webui-a1111:/workspace/external/sd-webui-a1111
-
     security_opt:
       - "label=type:nvidia_container_t"
     deploy:

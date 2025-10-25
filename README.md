@@ -45,25 +45,28 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 | CIVITAI_ENDPOINT    | Override the Civitai download endpoint.                                                                                                                           | `https://civitai.com` (or `https://civitai.work` if CN_NETWORK=`true`)     |
 
 ## Quick Start
-1. Clone this repository:
+1. Clone this repository, mount `docker/` as working directory:
     ```bash
     git clone https://github.com/jimlee2048/comfyui-docker
-    cd comfyui-docker
+    cd comfyui-docker/docker
     ```
 
-2. Create and configure `.env` file base on example:
+2. Create and configure `docker/.env` file base on example:
     ```bash
     cp example.env .env
     ```
-    see [example.env](https://github.com/jimlee2048/comfyui-docker/blob/main/example.env) for more details.
+    see [docker/example.env](https://github.com/jimlee2048/comfyui-docker/blob/main/docker/example.env) for more details.
 
 3. (Optional) Set up automatic node/model management:
-    - Set `INIT_NODE=true`  or/and `INIT_MODEL=true` in `.env`
-    - Create your boot config in `config/`, see [config/example.toml](https://github.com/jimlee2048/comfyui-docker/blob/main/config/example.toml) for more details.
+    - Set `INIT_NODE=true`  or/and `INIT_MODEL=true` in `docker/.env`
+    - Create your boot config in `docker/config/`
+    see [docker/config/example.toml](https://github.com/jimlee2048/comfyui-docker/blob/main/docker/config/example.toml) for more details.
 
-4. Review and adjust `docker-compose.yml` as needed:
-    - Choose ComfyUI version via image tag
-    - Configure volume mappings for persistent data
+4. Create and configure `docker/compose.yml` file base on example:
+    ```bash
+    cp compose.example.yml compose.yml
+    ```
+    see [docker/compose.example.yml](https://github.com/jimlee2048/comfyui-docker/blob/main/docker/compose.example.yml) for more details.
 
 5. Launch ComfyUI:
     - Run in foreground to see logs, recommended for first run.
