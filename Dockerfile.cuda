@@ -5,7 +5,7 @@ COPY src ./src
 RUN pip install --no-cache-dir --upgrade pip build \
     && python -m build --wheel --outdir dist
 
-FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:13.0.1-cudnn-runtime-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -30,7 +30,7 @@ RUN echo "source /opt/venv/bin/activate" >> ~/.bashrc
 ## let .pyc files be stored in one place
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
 ## add pytorch index url to pip config
-ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/cu129"
+ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/cu130"
 ENV PIP_EXTRA_INDEX_URL=${PYTORCH_INDEX_URL}
 ## upgrade pip, setuptools, wheel
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -53,7 +53,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 # install pytorch latest
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    torch==2.8 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
+    torch==2.9 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -65,19 +65,20 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install triton --index-url ${PYTORCH_INDEX_URL}
 
-# install xformers
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install xformers --index-url ${PYTORCH_INDEX_URL}
+# xformers not yet support torch 2.9 & cuda 13.0 officially, disable for now, see: https://github.com/facebookresearch/xformers/pull/1344
+## install xformers
+# RUN --mount=type=cache,target=/root/.cache/pip \
+#     pip install xformers --index-url ${PYTORCH_INDEX_URL}
 
 # install nunchaku
 RUN --mount=type=cache,target=/root/.cache/pip \
     NUNCHAKU_LATEST_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.8-cp312-cp312-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
 
 # install sageattention2
 RUN --mount=type=cache,target=/root/.cache/pip \
     SAGEATTENTION_LATEST_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu129torch2.8-cp312-cp312-linux_x86_64.whl"
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
