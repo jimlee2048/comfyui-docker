@@ -72,13 +72,15 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install nunchaku
 RUN --mount=type=cache,target=/root/.cache/pip \
-    NUNCHAKU_LATEST_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_LATEST_VERSION}/nunchaku-${NUNCHAKU_LATEST_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
+    # NUNCHAKU_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
+    # ComfyUI-nunchaku not yet support nunchaku>1.0.0, pin to v1.0.0 for now
+    NUNCHAKU_VERSION=v1.0.0 \
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_VERSION}/nunchaku-${NUNCHAKU_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
 
 # install sageattention2
 RUN --mount=type=cache,target=/root/.cache/pip \
-    SAGEATTENTION_LATEST_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTENTION_LATEST_VERSION}/sageattention-${SAGEATTENTION_LATEST_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
+    SAGEATTN_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTN_VERSION}/sageattention-${SAGEATTN_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
