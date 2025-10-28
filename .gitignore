@@ -18,13 +18,13 @@ volumes/
 
 # local files
 **extra_model_paths.yaml
+docker/compose.yml
 docker/config/**
 docker/scripts/pre-start/**
 docker/scripts/post-init/**
 docker/scripts/post-install-node/**
 
 # exclude examples
-!docker/compose.yml
 !**.example
 !**example.*
 !**.keep
