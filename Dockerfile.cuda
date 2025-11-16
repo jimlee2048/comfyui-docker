@@ -74,9 +74,9 @@ ARG SAGEATTN2_VERSION=latest
 RUN --mount=type=cache,target=/root/.cache/pip \
     LATEST_SAGEATTN2_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
     && if [ "${SAGEATTN2_VERSION}" = "latest" ]; then \
-        RESOLVED_SAGEATTN2_VERSION="${LATEST_NUNCHAKU_VERSION}"; \
+        RESOLVED_SAGEATTN2_VERSION="${LATEST_SAGEATTN2_VERSION}"; \
     else \
-        RESOLVED_SAGEATTN2_VERSION="${NUNCHAKU_VERSION}"; \
+        RESOLVED_SAGEATTN2_VERSION="${SAGEATTN2_VERSION}"; \
     fi \
     && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
