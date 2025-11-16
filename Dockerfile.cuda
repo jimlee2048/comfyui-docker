@@ -70,8 +70,15 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install xformers --index-url ${PYTORCH_INDEX_URL}
 
 # install sageattention2++
+ARG SAGEATTN2_VERSION=latest
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install sageattention==2.* --no-build-isolation
+    LATEST_SAGEATTN2_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
+    && if [ "${SAGEATTN2_VERSION}" = "latest" ]; then \
+        RESOLVED_SAGEATTN2_VERSION="${LATEST_NUNCHAKU_VERSION}"; \
+    else \
+        RESOLVED_SAGEATTN2_VERSION="${NUNCHAKU_VERSION}"; \
+    fi \
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
 # install nunchaku
 ARG NUNCHAKU_VERSION=latest
