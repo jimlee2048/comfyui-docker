@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS comfyui-helper-builder
+FROM python:3.13-slim AS comfyui-helper-builder
 WORKDIR /build
 COPY pyproject.toml ./
 COPY src ./src
@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    python3.12-full python3.12-dev python3-pip tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    python3.13-full python3.13-dev python3-pip tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -89,7 +89,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_NUNCHAKU_VERSION="${NUNCHAKU_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+torch2.9-cp313-cp313-linux_x86_64.whl"
 
 
 # install custom extra pip packages, if you don't mind image size
