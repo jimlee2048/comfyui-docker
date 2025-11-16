@@ -5,7 +5,7 @@ COPY src ./src
 RUN pip install --no-cache-dir --upgrade pip build \
     && python -m build --wheel --outdir dist
 
-FROM nvidia/cuda:13.0.1-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -65,22 +65,25 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install triton --index-url ${PYTORCH_INDEX_URL}
 
-# xformers not yet support torch 2.9 & cuda 13.0 officially, disable for now, see: https://github.com/facebookresearch/xformers/pull/1344
 ## install xformers
-# RUN --mount=type=cache,target=/root/.cache/pip \
-#     pip install xformers --index-url ${PYTORCH_INDEX_URL}
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install xformers --index-url ${PYTORCH_INDEX_URL}
+
+# install sageattention2++
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install sageattention==2.* --no-build-isolation
 
 # install nunchaku
+ARG NUNCHAKU_VERSION=latest
 RUN --mount=type=cache,target=/root/.cache/pip \
-    # NUNCHAKU_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
-    # ComfyUI-nunchaku not yet support nunchaku>1.0.0, pin to v1.0.0 for now
-    NUNCHAKU_VERSION=v1.0.0 \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${NUNCHAKU_VERSION}/nunchaku-${NUNCHAKU_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
+    LATEST_NUNCHAKU_VERSION=$(curl -s https://api.github.com/repos/nunchaku-tech/nunchaku/releases/latest | jq -r '.tag_name') \
+    && if [ "${NUNCHAKU_VERSION}" = "latest" ]; then \
+        RESOLVED_NUNCHAKU_VERSION="${LATEST_NUNCHAKU_VERSION}"; \
+    else \
+        RESOLVED_NUNCHAKU_VERSION="${NUNCHAKU_VERSION}"; \
+    fi \
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+torch2.9-cp312-cp312-linux_x86_64.whl"
 
-# install sageattention2
-RUN --mount=type=cache,target=/root/.cache/pip \
-    SAGEATTN_VERSION=$(curl -s https://api.github.com/repos/jimlee2048/SageAttention/releases/latest | jq -r '.tag_name') \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${SAGEATTN_VERSION}/sageattention-${SAGEATTN_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
 # install custom extra pip packages, if you don't mind image size
 RUN --mount=type=cache,target=/root/.cache/pip \
