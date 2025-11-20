@@ -17,7 +17,13 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
-    python3.13-full python3.13-dev python3-pip tini jq ca-certificates git build-essential cmake ninja-build wget curl aria2 ffmpeg libgl1-mesa-dev libopengl0 \
+    software-properties-common ca-certificates apt-transport-https gnupg \
+    git jq tini wget curl aria2 ffmpeg libgl1-mesa-glx libopengl0 \
+    build-essential cmake ninja-build \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    python3.13 python3.13-venv python3.13-dev python3.13-distutils python3-pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
