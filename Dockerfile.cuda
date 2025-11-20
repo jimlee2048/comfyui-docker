@@ -80,6 +80,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     fi \
     && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
 
+# install sageattn3
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/sageattn3-v1.0.0/sageattn3-1.0.0+cu130torch2.9-cp313-cp313-linux_x86_64.whl"
+
 # install nunchaku
 ARG NUNCHAKU_VERSION=latest
 RUN --mount=type=cache,target=/root/.cache/pip \
