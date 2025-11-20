@@ -23,13 +23,13 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    python3.13 python3.13-venv python3.13-dev python3.13-pip \
+    python3.13 python3.13-venv python3.13-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # prepare python environment
-## create venv
-RUN python3 -m venv /opt/venv
+## create venv with Python 3.13 (includes pip via ensurepip)
+RUN python3.13 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ## write venv to .bashrc
 RUN echo "source /opt/venv/bin/activate" >> ~/.bashrc
