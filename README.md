@@ -10,8 +10,7 @@ A Customizable [ComfyUI](https://github.com/comfyanonymous/ComfyUI) docker image
 ⚠️ **Note**: This image is designed for personal use with GUI access, not for production server deployments.
 
 ## Features
-- Ready-to-use Python environment with common ML packages: `nunchaku`, `sageattention`, ~~`xformers`~~, `transformers`, `onnxruntime`, `opencv-python`, etc.
-  - `xformers` is temporarily disabled while PyTorch 2.9 and CUDA 13.0 support is upstreamed.
+- Ready-to-use Python environment with common ML packages: `nunchaku`, `sageattention2++`,`sageattn3`, `xformers`, `transformers`, `onnxruntime`, `opencv-python`, etc.
   - See [Dockerfile](Dockerfile.cuda) for complete details
 - Automated management of custom nodes & models:
   - Configuration-driven setup during startup
