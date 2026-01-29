@@ -91,11 +91,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install triton
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install triton --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
+    pip install torch==${TORCH_VERSION} triton --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
 
 ## install xformers
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install xformers --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
+    pip install torch==${TORCH_VERSION} xformers --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
 
 # install sageattention2++
 ARG SAGEATTN2_VERSION=latest
