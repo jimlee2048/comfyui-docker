@@ -3,6 +3,7 @@
 ## Project Structure & Module Organization
 - `Dockerfile.cuda` defines the CUDA-enabled image; keep toolchain pins in sync with upstream releases.
 - `docker/` contains user-facing assets: `.env` template, boot configs, and compose example.
+- `docker/build-tools/` holds build-time assets like version resolver scripts.
 - `dev/` mirrors `docker/` but is safe for local experiments (custom configs, bind mounts, scratch volumes).
 - `src/comfyui_helper/` houses the Python package that handles config parsing, node/model sync, and boot hooks; each module should stay single-purpose (`config.py`, `nodes.py`, `models.py`, etc.).
 - `docker/scripts/<hook>/` directories are executed inside the container; scripts must be idempotent and log to stdout for compose visibility.

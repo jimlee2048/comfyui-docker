@@ -1,11 +1,35 @@
-FROM python:3.13-slim AS comfyui-helper-builder
+ARG CUDA_VERSION=13.0
+ARG CUDA_CUDNN_VARIANT=cudnn-devel
+ARG CUDA_DISTRO=ubuntu24.04
+ARG PYTHON_VERSION=3.13
+ARG TORCH_VERSION=2.9
+ARG TORCH_INDEX_BASE_URL=https://download.pytorch.org/whl
+# master(nightly), or version tag like v0.1.0
+# https://github.com/comfyanonymous/ComfyUI/tags
+ARG COMFYUI_VERSION=master
+# main(nightly), or version tag like v0.1.0
+# https://github.com/ltdrdata/ComfyUI-Manager/tags
+ARG COMFYUI_MN_VERSION=main
+
+FROM python:${PYTHON_VERSION}-slim AS comfyui-helper-builder
+ARG PYTHON_VERSION
 WORKDIR /build
 COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir --upgrade pip build \
     && python -m build --wheel --outdir dist
 
-FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:${CUDA_VERSION}-${CUDA_CUDNN_VARIANT}-${CUDA_DISTRO}
+ARG CUDA_VERSION
+ARG CUDA_CUDNN_VARIANT
+ARG CUDA_DISTRO
+ARG PYTHON_VERSION
+ARG TORCH_VERSION
+ARG TORCH_INDEX_BASE_URL
+ARG COMFYUI_VERSION
+ARG COMFYUI_MN_VERSION
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV WORKDIR=/workspace
 WORKDIR ${WORKDIR}
@@ -23,21 +47,23 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-    python3.13 python3.13-venv python3.13-dev \
+    python${PYTHON_VERSION} python${PYTHON_VERSION}-venv python${PYTHON_VERSION}-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+COPY docker/build-tools/resolve-versions.sh /tmp/build/resolve-versions.sh
+RUN bash /tmp/build/resolve-versions.sh /etc/profile.d/build-versions.sh \
+    && rm -rf /tmp/build
+ENV BASH_ENV=/etc/profile.d/build-versions.sh
+
 # prepare python environment
-## create venv with Python 3.13 (includes pip via ensurepip)
-RUN python3.13 -m venv /opt/venv
+## create venv with Python (includes pip via ensurepip)
+RUN ${PYTHON_BIN} -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 ## write venv to .bashrc
 RUN echo "source /opt/venv/bin/activate" >> ~/.bashrc
 ## let .pyc files be stored in one place
 ENV PYTHONPYCACHEPREFIX="/root/.cache/pycache"
-## add pytorch index url to pip config
-ARG PYTORCH_INDEX_URL="https://download.pytorch.org/whl/cu130"
-ENV PIP_EXTRA_INDEX_URL=${PYTORCH_INDEX_URL}
 ## upgrade pip, setuptools, wheel
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -U pip setuptools wheel
@@ -46,20 +72,16 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN git clone --single-branch https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_PATH} \
     && git clone --single-branch https://github.com/Comfy-Org/ComfyUI-Manager.git ${COMFYUI_MN_PATH}
 
-# master(nightly), or version tag like v0.1.0
-# https://github.com/comfyanonymous/ComfyUI/tags
-ARG COMFYUI_VERSION=master
 RUN git -C ${COMFYUI_PATH} fetch --all --tags --prune \
     && git -C ${COMFYUI_PATH} reset --hard ${COMFYUI_VERSION}
-# main(nightly), or version tag like v0.1.0
-# https://github.com/ltdrdata/ComfyUI-Manager/tags
-ARG COMFYUI_MN_VERSION=main
+
+# install comfyui-manager
 RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 
 # install pytorch latest
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    torch==2.9 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
+    torch==${TORCH_VERSION} torchvision torchaudio --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -69,11 +91,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # install triton
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install triton --index-url ${PYTORCH_INDEX_URL}
+    pip install triton --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
 
 ## install xformers
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install xformers --index-url ${PYTORCH_INDEX_URL}
+    pip install xformers --index-url ${TORCH_INDEX_BASE_URL}/${CUDA_TAG}
 
 # install sageattention2++
 ARG SAGEATTN2_VERSION=latest
@@ -88,11 +110,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_SAGEATTN2_VERSION="${SAGEATTN2_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.9-cp39-abi3-linux_x86_64.whl"
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+${CUDA_TORCH_TAG}-cp39-abi3-linux_x86_64.whl"
 
 # install sageattn3
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/sageattn3-v1.0.0/sageattn3-1.0.0+cu130torch2.9-cp313-cp313-linux_x86_64.whl"
+    pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/sageattn3-v1.0.0/sageattn3-1.0.0+${CUDA_TORCH_TAG}-${PYTHON_TAG}-${PYTHON_TAG}-linux_x86_64.whl"
 
 # install nunchaku
 ARG NUNCHAKU_VERSION=latest
@@ -107,7 +129,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_NUNCHAKU_VERSION="${NUNCHAKU_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+torch2.9-cp313-cp313-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+${TORCH_TAG}-${PYTHON_TAG}-${PYTHON_TAG}-linux_x86_64.whl"
 
 
 # install custom extra pip packages, if you don't mind image size
