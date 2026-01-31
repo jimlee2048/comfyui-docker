@@ -59,7 +59,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 # install pytorch latest
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    torch==2.9 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
+    torch==2.10 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
