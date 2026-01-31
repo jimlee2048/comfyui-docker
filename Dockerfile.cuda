@@ -107,7 +107,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_NUNCHAKU_VERSION="${NUNCHAKU_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+torch2.10-cp313-cp313-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+cu13.0torch2.10-cp313-cp313-linux_x86_64.whl"
 
 
 # install custom extra pip packages, if you don't mind image size
