@@ -59,7 +59,7 @@ RUN git -C ${COMFYUI_MN_PATH} reset --hard ${COMFYUI_MN_VERSION}
 # install pytorch latest
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install \
-    torch==2.10 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
+    torch==2.11 torchvision torchaudio --index-url ${PYTORCH_INDEX_URL}
 
 # install comfyui basic requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
@@ -88,11 +88,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_SAGEATTN2_VERSION="${SAGEATTN2_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.10-cp39-abi3-linux_x86_64.whl"
+    && pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/${RESOLVED_SAGEATTN2_VERSION}/sageattention-${RESOLVED_SAGEATTN2_VERSION#v}+cu130torch2.11-cp39-abi3-linux_x86_64.whl"
 
 # install sageattn3
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/sageattn3-v1.0.0/sageattn3-1.0.0+cu130torch2.10-cp313-cp313-linux_x86_64.whl"
+    pip install -U "https://github.com/jimlee2048/SageAttention/releases/download/sageattn3-v1.0.0/sageattn3-1.0.0+cu130torch2.11-cp313-cp313-linux_x86_64.whl"
 
 # install nunchaku
 ARG NUNCHAKU_VERSION=latest
@@ -107,7 +107,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     else \
         RESOLVED_NUNCHAKU_VERSION="${NUNCHAKU_VERSION}"; \
     fi \
-    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+cu13.0torch2.10-cp313-cp313-linux_x86_64.whl"
+    && pip install -U "https://github.com/nunchaku-tech/nunchaku/releases/download/${RESOLVED_NUNCHAKU_VERSION}/nunchaku-${RESOLVED_NUNCHAKU_VERSION#v}+cu13.0torch2.11-cp313-cp313-linux_x86_64.whl"
 
 
 # install custom extra pip packages, if you don't mind image size
