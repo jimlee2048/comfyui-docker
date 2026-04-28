@@ -77,6 +77,8 @@ jobs:
           swap-size-mb: 8192
           remove-android: "true"
           remove-dotnet: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
           build-mount-path: "/var/lib/docker/"
 
       - name: Restore /var/lib/docker/*
